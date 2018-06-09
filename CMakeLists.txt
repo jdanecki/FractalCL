@@ -31,8 +31,6 @@ add_executable(FractalCL
     ocl.c
     include/fractal_complex.h
     include/fractal_ocl.h
-    julia.cl
-    mandelbrot.cl
 )
 
 target_link_libraries(FractalCL
