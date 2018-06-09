@@ -14,9 +14,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#define WIDTH 1920
-#define HEIGHT 1080
 
+#define WIDTH 1024
+#define HEIGHT 768
 #define WIDTH_FL (WIDTH * 1.0f)
 #define HEIGHT_FL (HEIGHT * 1.0f)
 
