@@ -21,12 +21,8 @@ __kernel void mandelbrot(__global uint *pixels, __global unsigned int *colors,
 
   i = 0;
   while (i < max_iter) {
-#if 1
-    j_x = z_x * z_x - z_y * z_y;
-    j_y = 2 * z_x * z_y;
-
-    j_x += c_x;
-    j_y += c_y;
+    j_x = z_x * z_x - z_y * z_y + c_x;
+    j_y = 2 * z_x * z_y + c_y;
 
     d = (j_x * j_x + j_y * j_y);
     if (d > er)
@@ -34,7 +30,6 @@ __kernel void mandelbrot(__global uint *pixels, __global unsigned int *colors,
 
     z_x = j_x;
     z_y = j_y;
-#endif
     i++;
   }
   if (pal)

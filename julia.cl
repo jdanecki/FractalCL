@@ -9,29 +9,25 @@ __kernel void julia(__global uint *pixels, __global unsigned int *colors,
   int i;
   unsigned int color = 0;
   double j_x, j_y;
-  double z_julia_x, z_julia_y, d;
+  double z_x, z_y, d;
 
   x = ofs_x + 4 * get_global_id(0);
   y = ofs_y + 4 * get_global_id(1);
 
-  z_julia_x = ofs_lx + x * step_x;
-  z_julia_y = ofs_ty + y * step_y;
+  z_x = ofs_lx + x * step_x;
+  z_y = ofs_ty + y * step_y;
 
-  // if (x < 2 && y < 2) printf("OCL[%d,%d]:x,y=%f,%f max_iter=%d\n", x, y,
-  // z_julia_x, z_julia_y, max_iter);
   i = 0;
   while (i < max_iter) {
-#if 1
-    j_x = z_julia_x * z_julia_x - z_julia_y * z_julia_y + c_x;
-    j_y = 2 * z_julia_x * z_julia_y + c_y;
+    j_x = z_x * z_x - z_y * z_y + c_x;
+    j_y = 2 * z_x * z_y + c_y;
 
     d = (j_x * j_x + j_y * j_y);
     if (d > er)
       break;
 
-    z_julia_x = j_x;
-    z_julia_y = j_y;
-#endif
+    z_x = j_x;
+    z_y = j_y;
     i++;
   }
   if (pal)
@@ -41,8 +37,8 @@ __kernel void julia(__global uint *pixels, __global unsigned int *colors,
 
   if (show_z) {
     unsigned int x1, y1;
-    x1 = WIDTH / 2 + z_julia_x * WIDTH / 4;
-    y1 = HEIGHT / 2 + z_julia_y * HEIGHT / 4;
+    x1 = WIDTH / 2 + z_x * WIDTH / 4;
+    y1 = HEIGHT / 2 + z_y * HEIGHT / 4;
     if (y1 < HEIGHT && x1 < WIDTH && x1 > 0 && y1 > 0) {
       pixels[y1 * WIDTH + x1] = color;
     } else

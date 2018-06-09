@@ -26,10 +26,10 @@ volatile int nr_devices;
 pthread_cond_t cond_fin;
 pthread_mutex_t lock_fin;
 
-double zx = 1.0, zy = 1.0;
-double dx, dy;
-double szx = 1.0, szy = 1.0;
-double mx, my;
+double zx = 1.0, zy = 1.0;   // zoom x, y
+double dx, dy;               // shift left/right, down/up
+double szx = 1.0, szy = 1.0; // scale x and y
+double mx, my; // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
 
 int mm = 16;
 
@@ -293,14 +293,14 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
   // clWaitForEvents(1, &dev->event);
   clFinish(dev->queue);
   dev->execution = SDL_GetTicks() - ticks;
-  printf("%s: Execution: %u\n", dev->name, dev->execution);
+  //  printf("%s: Execution: %u\n", dev->name, dev->execution);
   clReleaseEvent(dev->event);
 
   // clFinish(cl[thread].queue_gpu);
   return 0;
 }
 
-#define CHECK_TIME 1
+//#define CHECK_TIME 1
 
 void *gpu_kernel(void *d) {
   struct ocl_device *dev = (struct ocl_device *)d;
@@ -310,14 +310,16 @@ void *gpu_kernel(void *d) {
   while (!finish_thread && !err) {
     pthread_mutex_lock(&t->lock);
     while (!t->work) {
-      if (finish_thread)
+      if (finish_thread) {
+        //		  printf("thread exits\n");
         return NULL;
+      }
       pthread_cond_wait(&t->cond, &t->lock);
     }
     t->work = 0;
     pthread_mutex_unlock(&t->lock);
 
-    //    printf("gpu kernel for %s\n", dev->name);
+    //        printf("gpu kernel for %s tid=%lx\n", dev->name, dev->thread.tid);
 
     err = execute_fractal(dev, fractal);
 
@@ -333,7 +335,7 @@ void *gpu_kernel(void *d) {
     pthread_cond_broadcast(&cond_fin);
     pthread_mutex_unlock(&lock_fin);
   }
-  printf("thread exits\n");
+  // printf("thread exits\n");
   sleep(1);
   return NULL;
 }
@@ -427,12 +429,6 @@ void run_program() {
 
       ofs_ty = (ofs_ty - my) * zy + my;
       ofs_by = (ofs_by - my) * zy + my;
-#if 0
-          printf("x=%d, y=%d mx=%f my=%f button=%d zx = %f zy=%f ofs_x[%2.20f,%2.20f] ofs_y=[%2.20f,%2.20f]\n ",
-                   event.button.x, event.button.y,
-                    mx, my, event.button.button, zx, zy,
-                   ofs_lx, ofs_rx, ofs_ty, ofs_by);
-#endif
     }
 
     draw = 1; // for tests only
@@ -460,16 +456,7 @@ void run_program() {
                                   NULL);
         }
       }
-#ifdef CHECK_TIME
-      ticks = SDL_GetTicks() - ticks;
-      clock_gettime(CLOCK_MONOTONIC_RAW, &tp2);
 
-      printf("%u ms fps=%u (%u) x:[%2.15f,%2.15f] y:[%2.15f,%2.15f] sz:%f "
-             "zx:%f iter=%d\n",
-             ticks, ticks ? 1000 / ticks : 0, intel.execution, ofs_lx, ofs_rx,
-             ofs_ty, ofs_by, szx, zx, max_iter);
-      fflush(stdout);
-#endif
       SDL_Flip(main_window);
 
     } else
@@ -589,7 +576,7 @@ void run_program() {
           if (!pal)
             printf("HSV\n");
           else
-            printf("RGB");
+            printf("RGB\n");
           break;
         case '[':
           c_x -= 0.001;
@@ -638,21 +625,9 @@ void run_program() {
           break;
         }
         draw = 1;
-        /*                printf("key=%d zx=%f zy=%f ofs_x=[%2.20f,%2.20f]
-           ofs_y=[%2.20f,%2.20f] mm=%x er=%f max_iter=%d\n",
-                               kl, zx, zy, ofs_lx, ofs_rx, ofs_ty, ofs_by,  mm,
-           er, max_iter);
-                               */
       }
 
       if (event.type == SDL_MOUSEMOTION) {
-        /*    float m1x, m1y;
-
-            m1x = equation(event.button.x, 0, ofs_lx, WIDTH , ofs_rx);
-            m1y = equation(event.button.y, 0, ofs_ty, HEIGHT, ofs_by);
-            printf("move: mx=%f my=%f button=%d\n",
-                    m1x, m1y, event.button.button);
-*/
       }
 
       if (event.type == SDL_MOUSEBUTTONDOWN) {
