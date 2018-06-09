@@ -1,5 +1,6 @@
 #include <CL/cl.h>
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
@@ -13,7 +14,10 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+extern const char *font_file;
+extern TTF_Font *font;
 
+#define FONT_SIZE 20
 
 #define WIDTH 1024
 #define HEIGHT 768

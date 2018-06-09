@@ -3,11 +3,13 @@ cmake_minimum_required(VERSION 3.2)
 
 find_package(PkgConfig)
 pkg_check_modules(SDL sdl)
+pkg_check_modules(SDL_TTF SDL_ttf)
+
 find_package(OpenCL REQUIRED)
 
 include_directories(include)
 
-add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS})
+add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS})
 
 add_executable(FractalCL
     fractal_ocl.c
@@ -19,7 +21,7 @@ add_executable(FractalCL
 )
 
 target_link_libraries(FractalCL
-    ${SDL_LDFLAGS}
+	${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
     ${OpenCL_LIBRARY}
     -lm -lrt -lpthread -ldl
 )

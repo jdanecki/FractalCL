@@ -55,6 +55,7 @@ double c_y = -0.60f;
 // double c_y = 0.27015f;
 
 int bpp;
+char status_line[100];
 
 enum fractals fractal = JULIA;
 
@@ -73,6 +74,52 @@ int init_window() {
   SDL_WM_SetCaption("FractalCL", "FractalCL");
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
   return 0;
+}
+
+const char *font_file = "FreeMono.ttf";
+TTF_Font *font;
+
+void init_font() {
+  if (TTF_Init() == -1) {
+    printf("TTF_Init: %s\n", TTF_GetError());
+    exit(0);
+  }
+
+  font = TTF_OpenFont(font_file, FONT_SIZE);
+  if (font == NULL) {
+    printf("TTF_OpenFont(%s) : %s\n", font_file, TTF_GetError());
+    exit(0);
+  }
+}
+
+void write_text(const char *t, int x, int y) {
+  SDL_Surface *temp, *text_box;
+  SDL_Rect dest;
+  SDL_Color text_color;
+  SDL_Color shade_color;
+
+  text_color.r = 255;
+  text_color.b = 255;
+  text_color.g = 255;
+
+  shade_color.r = 0;
+  shade_color.g = 0;
+  shade_color.b = 0;
+
+  temp = TTF_RenderUTF8_Shaded(font, t, text_color, shade_color);
+
+  if (!temp) {
+    printf("TTF_RenderUTF8_Solid error\n");
+    exit(0);
+  }
+
+  text_box = SDL_DisplayFormat(temp);
+  SDL_FreeSurface(temp);
+
+  dest.x = x;
+  dest.y = y;
+  SDL_BlitSurface(text_box, NULL, main_window, &dest);
+  SDL_FreeSurface(text_box);
 }
 
 int prepare_pixels(struct ocl_device *dev) {
@@ -382,17 +429,55 @@ int prepare_thread(struct ocl_device *dev) {
   return 0;
 }
 
+void draw_one_frame() {
+  int err;
+#ifdef CHECK_TIME
+  unsigned int ticks;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
+  ticks = SDL_GetTicks();
+
+#endif
+  start_gpu();
+  if (intel.found) {
+    void *px1;
+
+    px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
+                             CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL,
+                             NULL, &err);
+    if (err != CL_SUCCESS) {
+      printf("clEnqueueMapBuffer error %d\n", err);
+    } else {
+      // memcpy(main_window->pixels + IMAGE_SIZE/2, px1, IMAGE_SIZE);
+      memcpy(main_window->pixels, px1, IMAGE_SIZE);
+      //					memset(px1, 0, IMAGE_SIZE);
+      clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL, NULL);
+    }
+  }
+#ifdef CHECK_TIME
+  ticks = SDL_GetTicks() - ticks;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp2);
+
+  printf("%u ms fps=%u (%u) x:[%2.15f,%2.15f] y:[%2.15f,%2.15f] sz:%f "
+         "zx:%f iter=%d\n",
+         ticks, ticks ? 1000 / ticks : 0, intel.execution, ofs_lx, ofs_rx,
+         ofs_ty, ofs_by, szx, zx, max_iter);
+#endif
+}
+
 void run_program() {
   SDL_Event event;
   int button;
   int click = 0;
   int key = 0;
+  int stop_animation = 0;
+  int draw_frames = 16;
+  int flip_window = 0;
+  float m1x, m1y;
 #ifdef CHECK_TIME
 //	SDL_Rect r;
 //	int counter = 0;
 #endif
 
-  int err;
   // int i;
   int draw = 1;
   /*r.w = WIDTH;
@@ -403,6 +488,7 @@ void run_program() {
   if (init_ocl())
     return;
   init_window();
+  init_font();
 
   if (prepare_colors(&intel))
     return;
@@ -429,39 +515,42 @@ void run_program() {
 
       ofs_ty = (ofs_ty - my) * zy + my;
       ofs_by = (ofs_by - my) * zy + my;
+
+      if (ofs_lx < -10 || ofs_rx > 10 || ofs_ty > 10 || ofs_by < -10) {
+        dx = 0;
+        dy = 0;
+
+        draw = 0;
+        click = 0;
+        draw_frames = 16;
+        stop_animation = 1;
+      }
     }
 
-    draw = 1; // for tests only
-    if (draw) {
-#ifdef CHECK_TIME
-      unsigned int ticks;
-      clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
-      ticks = SDL_GetTicks();
-
-#endif
-      start_gpu();
-      if (intel.found) {
-        void *px1;
-
-        px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
-                                 CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0,
-                                 NULL, NULL, &err);
-        if (err != CL_SUCCESS) {
-          printf("clEnqueueMapBuffer error %d\n", err);
-        } else {
-          // memcpy(main_window->pixels + IMAGE_SIZE/2, px1, IMAGE_SIZE);
-          memcpy(main_window->pixels, px1, IMAGE_SIZE);
-          //					memset(px1, 0, IMAGE_SIZE);
-          clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL,
-                                  NULL);
-        }
+    //    draw = 1; // for tests only
+    if (draw || stop_animation) {
+      int pixel;
+      for (pixel = 0; pixel < draw_frames; pixel++) {
+        draw_one_frame();
       }
-
-      SDL_Flip(main_window);
-
-    } else
+      sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x", max_iter, er,
+              c_x, c_y, (pal) ? "RGB" : "HSV", mm);
+      write_text(status_line, 0, 0);
+      draw_frames = 1;
+      stop_animation = 0;
+      flip_window = 1;
+    } else {
       SDL_Delay(1);
+    }
 
+    if (flip_window) {
+      float m2x, m2y;
+      m2x = equation(m1x, 0, ofs_lx, WIDTH, ofs_rx);
+      m2y = equation(m1y, 0, ofs_ty, HEIGHT, ofs_by);
+      sprintf(status_line, "[%2.15f,%2.15f]", m2x, m2y);
+      write_text(status_line, 10, HEIGHT - FONT_SIZE);
+      SDL_Flip(main_window);
+    }
     if (!click)
       draw = 0;
     if (key) {
@@ -476,7 +565,7 @@ void run_program() {
         goto finish;
       if (event.type == SDL_KEYDOWN) {
         int kl = event.key.keysym.sym;
-
+        draw_frames = 16;
         switch (kl) {
         case 27:
           goto finish;
@@ -628,6 +717,9 @@ void run_program() {
       }
 
       if (event.type == SDL_MOUSEMOTION) {
+        m1x = event.button.x;
+        m1y = event.button.y;
+        flip_window = 1;
       }
 
       if (event.type == SDL_MOUSEBUTTONDOWN) {
@@ -638,6 +730,8 @@ void run_program() {
 
           draw = 0;
           click = 0;
+          draw_frames = 16;
+          stop_animation = 1;
           continue;
         }
 
@@ -648,9 +742,11 @@ void run_program() {
           if (button != event.button.button) {
             zx = 1.0;
             zy = 1.0;
+            stop_animation = 1;
+            draw_frames = 16;
           } else {
-            zx += 0.01;
-            zy += 0.01;
+            zx += 0.001;
+            zy += 0.001;
           }
           click = 1;
         }
@@ -659,9 +755,11 @@ void run_program() {
           if (button != event.button.button) {
             zx = 1.0;
             zy = 1.0;
+            stop_animation = 1;
+            draw_frames = 16;
           } else {
-            zx -= 0.01;
-            zy -= 0.01;
+            zx -= 0.001;
+            zy -= 0.001;
           }
           click = 1;
         }

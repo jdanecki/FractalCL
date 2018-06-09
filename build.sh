@@ -6,3 +6,5 @@ cmake ..
 make
 
 ln -sf ../*.cl .
+ln -sf ../*.ttf .
+
