@@ -23,6 +23,9 @@ Discover and explore fractals world with OpenCL acceleration.
 * mandelbrot
 ![mandelbrot](mandelbrot.png)
 
+* dragon
+![dragon](dragon.png)
+
 # Tested platforms
 
 * Intel OpenCL GPU on Linux: https://github.com/intel/compute-runtime

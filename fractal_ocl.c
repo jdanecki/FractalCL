@@ -451,7 +451,6 @@ unsigned long draw_one_frame() {
     } else {
       // memcpy(main_window->pixels + IMAGE_SIZE/2, px1, IMAGE_SIZE);
       memcpy(main_window->pixels, px1, IMAGE_SIZE);
-      //					memset(px1, 0, IMAGE_SIZE);
       clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL, NULL);
     }
   }
@@ -514,7 +513,8 @@ void run_program() {
         stop_animation = 1;
       }
     }
-
+    if (fractal == DRAGON)
+      draw_frames = 1;
     if (draw || stop_animation) {
       int pixel;
       unsigned long frame_time = 0;
@@ -633,8 +633,8 @@ void run_program() {
           break;
         case 'z':
           er -= 0.1;
-          if (er < 0.1)
-            er = 0.1;
+          if (er < 0.0f)
+            er = 0.0f;
           break;
         case 'x':
           er += 0.1;
@@ -697,21 +697,37 @@ void run_program() {
           fractal = JULIA;
           gws_x = WIDTH / 4;
           gws_y = HEIGHT / 4;
+          max_iter = 360;
+          er = 4.0f;
+          ofs_lx = -1.5f;
+          ofs_ty = 1.5f;
           break;
         case SDLK_F2:
           fractal = MANDELBROT;
           gws_x = WIDTH / 4;
           gws_y = HEIGHT / 4;
+          max_iter = 360;
+          er = 4.0f;
+          ofs_lx = -1.5f;
+          ofs_ty = 1.5f;
           break;
         case SDLK_F3:
           fractal = JULIA4;
           gws_x = WIDTH;
           gws_y = HEIGHT;
+          max_iter = 360;
+          er = 4.0f;
+          ofs_lx = -1.5f;
+          ofs_ty = 1.5f;
           break;
         case SDLK_F4:
           fractal = DRAGON;
           gws_x = WIDTH;
           gws_y = HEIGHT;
+          max_iter = 10000;
+          er = 0.9f;
+          ofs_lx = 0.0f;
+          ofs_ty = 0.0f;
           break;
         }
         draw = 1;
