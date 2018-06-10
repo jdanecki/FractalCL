@@ -35,7 +35,8 @@ Discover and explore fractals world with OpenCL acceleration.
 
 # Build instruction
 
-* Run build.sh script. It will configure and compile FractalCL application.
+* Run configure script to configure project
+* Run make to build project
 
 # Run instruction
 

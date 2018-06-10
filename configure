@@ -1,9 +1,9 @@
 #!/bin/bash
 
-set -e
 mkdir -p build
 cd build
-cmake .. && make
+cmake ..
 
 ln -sf ../kernels/*.cl .
 ln -sf ../*.ttf .
+
