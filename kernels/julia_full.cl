@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
-__kernel void julia4(__global uint *pixels, __global unsigned int *colors,
+__kernel void julia_full(__global uint *pixels, __global unsigned int *colors,
                      int mm, double ofs_lx, double step_x, double ofs_ty,
                      double step_y, double er, int max_iter, int pal,
                      int show_z, double c_x, double c_y) {

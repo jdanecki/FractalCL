@@ -308,7 +308,7 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
     return 1;
   if (set_kernel_arg(kernel, name, 10, sizeof(int), &args->show_z))
     return 1;
-  if (fractal == JULIA || fractal == JULIA4 || fractal == DRAGON) {
+  if (fractal == JULIA || fractal == JULIA_FULL || fractal == DRAGON) {
     if (set_kernel_arg(kernel, name, 11, sizeof(double), &args->c_x))
       return 1;
     if (set_kernel_arg(kernel, name, 12, sizeof(double), &args->c_y))
@@ -712,7 +712,7 @@ void run_program() {
           ofs_ty = 1.5f;
           break;
         case SDLK_F3:
-          fractal = JULIA4;
+          fractal = JULIA_FULL;
           gws_x = WIDTH;
           gws_y = HEIGHT;
           max_iter = 360;
