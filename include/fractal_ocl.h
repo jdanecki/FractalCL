@@ -51,7 +51,7 @@ extern TTF_Font *font;
 int init_ocl();
 int close_ocl();
 
-enum fractals { JULIA, MANDELBROT, JULIA_FULL, DRAGON, NR_FRACTALS };
+enum fractals { JULIA, MANDELBROT, JULIA_FULL, DRAGON, JULIA3, NR_FRACTALS };
 
 struct kernel_args {
   void *pixels;

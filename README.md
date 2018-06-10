@@ -15,12 +15,15 @@ Discover and explore fractals world with OpenCL acceleration.
 * SDL library
 * OpenCL GPU library
 
-# Current fractals
+# Implemented fractals
 
-* julia
+* julia z^2+c
 ![julia](julia.png)
 
-* mandelbrot
+* julia z^3+c
+![julia3](julia3.png)
+
+* mandelbrot z^2+c
 ![mandelbrot](mandelbrot.png)
 
 * dragon

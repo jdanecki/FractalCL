@@ -168,6 +168,8 @@ int create_kernels(struct ocl_device *dev, char *options) {
     return 1;
   if (create_kernel(dev, DRAGON))
     return 1;
+  if (create_kernel(dev, JULIA3))
+    return 1;
   printf("------------------------------------------\n");
   return 0;
 }
@@ -239,6 +241,7 @@ int init_ocl() {
   open_fractal(MANDELBROT, "mandelbrot");
   open_fractal(JULIA_FULL, "julia_full");
   open_fractal(DRAGON, "dragon");
+  open_fractal(JULIA3, "julia3");
 
   if (create_kernels(&intel, "-w"))
     return 1;
