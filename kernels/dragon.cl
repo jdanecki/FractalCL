@@ -22,12 +22,12 @@ __kernel void dragon(__global uint *pixels, __global unsigned int *colors,
       yc = y1;
       x = (ofs_lx + x1) * mm;
       y = (ofs_ty + y1) * mm;
-      if (x < WIDTH/2 && y < HEIGHT < 2 && x > -WIDTH/2 && y > -HEIGHT/2) {
-      	pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r;
-	  }
-   	}
-   }
-   else {
-      pixels[get_global_id(1) * WIDTH + get_global_id(0)] = 0;
-	}
+      if (x < WIDTH / 2 && y < HEIGHT < 2 && x > -WIDTH / 2 &&
+          y > -HEIGHT / 2) {
+        pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r;
+      }
+    }
+  } else {
+    pixels[get_global_id(1) * WIDTH + get_global_id(0)] = 0;
+  }
 }

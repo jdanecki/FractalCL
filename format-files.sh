@@ -1,7 +1,6 @@
 #!/bin/bash
 
-for i in *.c *.cl include/*.h
+for i in *.c kernels/*.cl include/*.h
 do
 	clang-format -i $i
 done
-
