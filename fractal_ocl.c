@@ -122,6 +122,13 @@ void write_text(const char *t, int x, int y) {
   SDL_FreeSurface(text_box);
 }
 
+unsigned long get_time_usec() {
+  struct timespec t;
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+  return (t.tv_sec * 1000000 + t.tv_nsec / 1000);
+}
+
 int prepare_pixels(struct ocl_device *dev) {
   int err;
   if (!dev->found)
@@ -242,6 +249,7 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
   char *name = fractals[fractal].name;
   struct kernel_args *args = &dev->args[fractal];
   int err;
+  unsigned long tp1, tp2;
 
   args->ofs_lx = ofs_lx;
   args->ofs_rx = ofs_rx;
@@ -269,15 +277,9 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
     args->ofs_y = 0;
   }
 
-  unsigned int ticks;
-
   gws[0] = gws_x;
   gws[1] = gws_y;
 
-  // if (fractal == JULIA4)
-  // {
-  // 	gws[0] /= 4;
-  //}
   if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels))
     return 1;
   if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors))
@@ -326,9 +328,12 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
       return 1;
   }
 
-  ticks = SDL_GetTicks();
   // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
   // NULL, &dev->event);
+  //
+
+  tp1 = get_time_usec();
+
   err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL,
                                NULL);
   if (err != CL_SUCCESS) {
@@ -339,15 +344,14 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
   // clFlush(dev->queue);
   // clWaitForEvents(1, &dev->event);
   clFinish(dev->queue);
-  dev->execution = SDL_GetTicks() - ticks;
-  //  printf("%s: Execution: %u\n", dev->name, dev->execution);
-  clReleaseEvent(dev->event);
+  tp2 = get_time_usec();
+  dev->execution = tp2 - tp1;
+
+  //  clReleaseEvent(dev->event);
 
   // clFinish(cl[thread].queue_gpu);
   return 0;
 }
-
-//#define CHECK_TIME 1
 
 void *gpu_kernel(void *d) {
   struct ocl_device *dev = (struct ocl_device *)d;
@@ -429,14 +433,12 @@ int prepare_thread(struct ocl_device *dev) {
   return 0;
 }
 
-void draw_one_frame() {
+unsigned long draw_one_frame() {
   int err;
-#ifdef CHECK_TIME
-  unsigned int ticks;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
-  ticks = SDL_GetTicks();
+  unsigned long tp1, tp2;
 
-#endif
+  tp1 = get_time_usec();
+
   start_gpu();
   if (intel.found) {
     void *px1;
@@ -453,15 +455,8 @@ void draw_one_frame() {
       clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL, NULL);
     }
   }
-#ifdef CHECK_TIME
-  ticks = SDL_GetTicks() - ticks;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &tp2);
-
-  printf("%u ms fps=%u (%u) x:[%2.15f,%2.15f] y:[%2.15f,%2.15f] sz:%f "
-         "zx:%f iter=%d\n",
-         ticks, ticks ? 1000 / ticks : 0, intel.execution, ofs_lx, ofs_rx,
-         ofs_ty, ofs_by, szx, zx, max_iter);
-#endif
+  tp2 = get_time_usec();
+  return tp2 - tp1;
 }
 
 void run_program() {
@@ -473,10 +468,6 @@ void run_program() {
   int draw_frames = 16;
   int flip_window = 0;
   float m1x, m1y;
-#ifdef CHECK_TIME
-//	SDL_Rect r;
-//	int counter = 0;
-#endif
 
   // int i;
   int draw = 1;
@@ -504,9 +495,6 @@ void run_program() {
     return;
 
   while (1) {
-#ifdef CHECK_TIME
-    struct timespec tp1, tp2;
-#endif
     // SDL_FillRect(main_window, &r, 0);
 
     if (click || key) {
@@ -527,15 +515,20 @@ void run_program() {
       }
     }
 
-    //    draw = 1; // for tests only
     if (draw || stop_animation) {
       int pixel;
+      unsigned long frame_time = 0;
       for (pixel = 0; pixel < draw_frames; pixel++) {
-        draw_one_frame();
+        frame_time += draw_one_frame();
       }
+
       sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x", max_iter, er,
               c_x, c_y, (pal) ? "RGB" : "HSV", mm);
       write_text(status_line, 0, 0);
+      sprintf(status_line, "gws=[%d,%d] time=%lu GPU=%lu", gws_x, gws_y,
+              frame_time / draw_frames, intel.execution);
+      write_text(status_line, WIDTH / 2, HEIGHT - FONT_SIZE);
+
       draw_frames = 1;
       stop_animation = 0;
       flip_window = 1;
@@ -702,15 +695,23 @@ void run_program() {
           break;
         case SDLK_F1:
           fractal = JULIA;
+          gws_x = WIDTH / 4;
+          gws_y = HEIGHT / 4;
           break;
         case SDLK_F2:
           fractal = MANDELBROT;
+          gws_x = WIDTH / 4;
+          gws_y = HEIGHT / 4;
           break;
         case SDLK_F3:
           fractal = JULIA4;
+          gws_x = WIDTH;
+          gws_y = HEIGHT;
           break;
         case SDLK_F4:
           fractal = DRAGON;
+          gws_x = WIDTH;
+          gws_y = HEIGHT;
           break;
         }
         draw = 1;

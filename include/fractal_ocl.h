@@ -103,7 +103,7 @@ struct ocl_device {
   struct ocl_thread thread;
   cl_mem cl_colors;
   cl_mem cl_pixels;
-  unsigned int execution;
+  unsigned long execution;
 };
 
 extern struct ocl_device intel;
