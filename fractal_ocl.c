@@ -18,7 +18,14 @@
 #include "fractal_ocl.h"
 #include "fractal_complex.h"
 
+#include "kernels/dragon.cl"
+#include "kernels/julia.cl"
+#include "kernels/julia3.cl"
+#include "kernels/julia_full.cl"
+#include "kernels/mandelbrot.cl"
+
 SDL_Surface *main_window;
+unsigned int *colors;
 
 volatile int tasks_finished;
 volatile int nr_devices;
@@ -56,6 +63,8 @@ double c_y = -0.60f;
 
 int bpp;
 char status_line[100];
+
+int cur_dev = 1; // 0 - CPU, 1 - GPU
 
 enum fractals fractal = JULIA;
 
@@ -154,7 +163,6 @@ int prepare_colors(struct ocl_device *dev) {
   // v [0, 1]
 
   int err, v, iter;
-  unsigned int *colors;
 
   if (!dev->found)
     return 0;
@@ -315,7 +323,7 @@ int execute_fractal(struct ocl_device *dev, enum fractals fractal) {
     if (set_kernel_arg(kernel, name, 12, sizeof(double), &args->c_y))
       return 1;
 
-    if (fractal == JULIA || fractal == DRAGON || fractal == JULIA3) {
+    if (fractal == JULIA || fractal == JULIA3) {
       if (set_kernel_arg(kernel, name, 13, sizeof(int), &args->ofs_x))
         return 1;
       if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y))
@@ -405,7 +413,111 @@ int signal_device(struct ocl_device *dev) {
   return 1;
 }
 
+struct cpu_args {
+  int xs, xe, ys, ye, ofs_x, ofs_y;
+};
+
+unsigned long cpu_execution;
+
+void *execute_fractal_cpu(void *c) {
+  int x, y;
+  struct cpu_args *cpu = (struct cpu_args *)c;
+
+  double ofs_lx1 = (ofs_lx + dx) / szx;
+  double ofs_rx1 = (ofs_rx + dx) / szx;
+  double ofs_ty1 = (ofs_ty + dy) / szy;
+  double ofs_by1 = (ofs_by + dy) / szy;
+
+  double step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+  double step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+
+  for (y = cpu->ys; y < cpu->ye; y++) {
+    for (x = cpu->xs; x < cpu->xe; x++) {
+      switch (fractal) {
+      case JULIA:
+        julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels,
+              colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
+              show_z, c_x, c_y);
+        break;
+      case JULIA3:
+        julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels,
+               colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
+               show_z, c_x, c_y);
+        break;
+      case JULIA_FULL:
+        julia_full(x, y, main_window->pixels, colors, mm, ofs_lx, step_x,
+                   ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
+        break;
+      case MANDELBROT:
+        mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels,
+                   colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter,
+                   pal, show_z);
+        break;
+      default:
+        return NULL;
+      }
+    }
+  }
+  return NULL;
+}
+
+void start_cpu() {
+  unsigned long tp1, tp2;
+  static int ofs_x = 0, ofs_y = 0;
+  int t;
+
+  ofs_x++;
+  if (ofs_x == 4) {
+    ofs_y++;
+    ofs_x = 0;
+  }
+  if (ofs_y == 4) {
+    ofs_x = 0;
+    ofs_y = 0;
+  }
+
+  tp1 = get_time_usec();
+
+  if (fractal == DRAGON) {
+    memset(main_window->pixels, 0, IMAGE_SIZE);
+    dragon(0, 0, main_window->pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er,
+           max_iter, pal, show_z, c_x, c_y);
+  } else {
+    struct cpu_args t_args[16] = {
+        {0, gws_x / 4, 0, gws_y / 4, ofs_x, ofs_y},
+        {gws_x / 4, gws_x / 2, 0, gws_y / 4, ofs_x, ofs_y},
+        {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4, ofs_x, ofs_y},
+        {gws_x * 3 / 4, gws_x, 0, gws_y / 4, ofs_x, ofs_y},
+
+        {0, gws_x / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+        {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+        {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+        {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+
+        {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+        {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+        {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+        {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+
+        {0, gws_x / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+        {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+        {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+        {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y, ofs_x, ofs_y}};
+
+    pthread_t tid[16];
+    for (t = 0; t < 16; t++) {
+      pthread_create(&tid[t], NULL, execute_fractal_cpu, &t_args[t]);
+    }
+    for (t = 0; t < 16; t++) {
+      pthread_join(tid[t], NULL);
+    }
+  }
+  tp2 = get_time_usec();
+  cpu_execution = tp2 - tp1;
+}
+
 void start_gpu() {
+  int err;
   if (!nr_devices)
     return;
   if (signal_device(&intel) == 0)
@@ -419,6 +531,22 @@ void start_gpu() {
   //  printf("tasks finished\n");
   tasks_finished = 0;
   pthread_mutex_unlock(&lock_fin);
+
+  if (intel.found) {
+    void *px1;
+
+    px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
+                             CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL,
+                             NULL, &err);
+    if (err != CL_SUCCESS) {
+      printf("clEnqueueMapBuffer error %d\n", err);
+    } else {
+      memcpy(main_window->pixels, px1, IMAGE_SIZE);
+      if (fractal == DRAGON)
+        memset(px1, 0, IMAGE_SIZE);
+      clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL, NULL);
+    }
+  }
 }
 
 int prepare_thread(struct ocl_device *dev) {
@@ -435,25 +563,14 @@ int prepare_thread(struct ocl_device *dev) {
 }
 
 unsigned long draw_one_frame() {
-  int err;
   unsigned long tp1, tp2;
 
   tp1 = get_time_usec();
 
-  start_gpu();
-  if (intel.found) {
-    void *px1;
-
-    px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
-                             CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL,
-                             NULL, &err);
-    if (err != CL_SUCCESS) {
-      printf("clEnqueueMapBuffer error %d\n", err);
-    } else {
-      // memcpy(main_window->pixels + IMAGE_SIZE/2, px1, IMAGE_SIZE);
-      memcpy(main_window->pixels, px1, IMAGE_SIZE);
-      clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL, NULL);
-    }
+  if (cur_dev) {
+    start_gpu();
+  } else {
+    start_cpu();
   }
   tp2 = get_time_usec();
   return tp2 - tp1;
@@ -516,6 +633,7 @@ void run_program() {
     }
     if (fractal == DRAGON)
       draw_frames = 1;
+
     if (draw || stop_animation) {
       int pixel;
       unsigned long frame_time = 0;
@@ -526,8 +644,9 @@ void run_program() {
       sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x", max_iter, er,
               c_x, c_y, (pal) ? "RGB" : "HSV", mm);
       write_text(status_line, 0, 0);
-      sprintf(status_line, "gws=[%d,%d] time=%lu GPU=%lu", gws_x, gws_y,
-              frame_time / draw_frames, intel.execution);
+      sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y,
+              frame_time / draw_frames, cur_dev ? "GPU" : "CPU",
+              cur_dev ? intel.execution : cpu_execution);
       write_text(status_line, WIDTH / 2, HEIGHT - FONT_SIZE);
 
       draw_frames = 1;
@@ -729,6 +848,21 @@ void run_program() {
           er = 0.9f;
           ofs_lx = 0.0f;
           ofs_ty = 0.0f;
+          if (intel.found) {
+            void *px1;
+            int err;
+
+            px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
+                                     CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE,
+                                     0, NULL, NULL, &err);
+            if (err != CL_SUCCESS) {
+              printf("clEnqueueMapBuffer error %d\n", err);
+            } else {
+              memset(px1, 0, IMAGE_SIZE);
+              clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0,
+                                      NULL, NULL);
+            }
+          }
           break;
         case SDLK_F5:
           fractal = JULIA3;
@@ -738,6 +872,9 @@ void run_program() {
           er = 4.0f;
           ofs_lx = -1.5f;
           ofs_ty = 1.5f;
+          break;
+        case 'v':
+          cur_dev ^= 1;
           break;
         }
         draw = 1;

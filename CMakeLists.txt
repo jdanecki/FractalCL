@@ -24,7 +24,7 @@ find_package(OpenCL REQUIRED)
 
 include_directories(include)
 
-add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS})
+add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
 
 add_executable(FractalCL
     fractal_ocl.c

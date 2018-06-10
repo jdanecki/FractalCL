@@ -9,6 +9,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * Keyboard support for changing fractals/kernel parameters
 * OpenCL support to speed up fractals calculation
 * 2 colors models: RGB and HSV
+* OpenCL kernels can be executed on CPU
 
 # Requirements 
 

@@ -1,20 +1,26 @@
+#ifdef HOST_APP
+void mandelbrot(int x, int y, uint *pixels, unsigned int *colors, int mm,
+                double ofs_lx, double step_x, double ofs_ty, double step_y,
+                double er, int max_iter, int pal, int show_z)
+#else
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-
 __kernel void mandelbrot(__global uint *pixels, __global unsigned int *colors,
                          int mm, double ofs_lx, double step_x, double ofs_ty,
                          double step_y, double er, int max_iter, int pal,
-                         int show_z, int ofs_x, int ofs_y) {
-  int x, y;
-
+                         int show_z, int ofs_x, int ofs_y)
+#endif
+{
   int i;
   unsigned int color = 0;
   double j_x, j_y;
   double z_x = 0, z_y = 0;
-  double d, a, b;
+  double d;
   double c_x, c_y;
 
-  x = ofs_x + 4 * get_global_id(0);
-  y = ofs_y + 4 * get_global_id(1);
+#ifndef HOST_APP
+  int x = ofs_x + 4 * get_global_id(0);
+  int y = ofs_y + 4 * get_global_id(1);
+#endif
 
   c_x = ofs_lx + x * step_x;
   c_y = ofs_ty + y * step_y;
