@@ -31,8 +31,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-extern const char *font_file;
-extern TTF_Font *font;
+extern const char* font_file;
+extern TTF_Font* font;
 
 #define FONT_SIZE 20
 
@@ -51,59 +51,71 @@ extern TTF_Font *font;
 int init_ocl();
 int close_ocl();
 
-enum fractals { JULIA, MANDELBROT, JULIA_FULL, DRAGON, JULIA3, NR_FRACTALS };
-
-struct kernel_args {
-  void *pixels;
-  unsigned int *colors;
-  int mm;
-  double ofs_lx;
-  double ofs_rx;
-  double ofs_ty;
-  double ofs_by;
-  double er;
-  int max_iter;
-  int pal;
-  int show_z;
-  double c_x, c_y;
-  int ofs_x, ofs_y;
+enum fractals
+{
+    JULIA,
+    MANDELBROT,
+    JULIA_FULL,
+    DRAGON,
+    JULIA3,
+    NR_FRACTALS
 };
 
-struct ocl_fractal {
-  char *name;
-  enum fractals id;
-  char *source;
-  int fd;
-  size_t filesize;
+struct kernel_args
+{
+    void* pixels;
+    unsigned int* colors;
+    int mm;
+    double ofs_lx;
+    double ofs_rx;
+    double ofs_ty;
+    double ofs_by;
+    double er;
+    int max_iter;
+    int pal;
+    int show_z;
+    double c_x, c_y;
+    int ofs_x, ofs_y;
+};
+
+struct ocl_fractal
+{
+    char* name;
+    enum fractals id;
+    char* source;
+    int fd;
+    size_t filesize;
 };
 
 extern struct ocl_fractal fractals[NR_FRACTALS];
 
-struct ocl_thread {
-  pthread_t tid;
-  int work;
-  pthread_mutex_t lock;
-  pthread_cond_t cond;
-  int finished;
+struct ocl_thread
+{
+    pthread_t tid;
+    int work;
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+    int finished;
 };
 
-struct ocl_device {
-  cl_device_id gpu;
-  cl_command_queue queue;
-  cl_platform_id id;
-  cl_context ctx;
-  int found;
-  cl_program program;
-  cl_kernel kernels[NR_FRACTALS];
-  struct kernel_args args[NR_FRACTALS];
-  cl_event event;
-  char name[256];
-  unsigned int eu;
-  size_t wgs;
-  struct ocl_thread thread;
-  cl_mem cl_colors;
-  cl_mem cl_pixels;
-  unsigned long execution;
+struct ocl_device
+{
+    cl_device_id gpu;
+    cl_command_queue queue;
+    cl_platform_id id;
+    cl_context ctx;
+    int found;
+    cl_program program;
+    cl_kernel kernels[NR_FRACTALS];
+    struct kernel_args args[NR_FRACTALS];
+    cl_event event;
+    char name[256];
+    unsigned int eu;
+    size_t wgs;
+    struct ocl_thread thread;
+    cl_mem cl_colors;
+    cl_mem cl_pixels;
+    unsigned long execution;
 };
 
 extern struct ocl_device intel;
