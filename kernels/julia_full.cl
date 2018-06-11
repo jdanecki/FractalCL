@@ -1,21 +1,22 @@
 #ifdef HOST_APP
 void julia_full(int x, int y, uint* pixels, unsigned int* colors, int mm,
-                double ofs_lx, double step_x, double ofs_ty, double step_y,
-                double er, int max_iter, int pal, int show_z, double c_x,
-                double c_y)
+                FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
+                FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x,
+                FP_TYPE c_y)
 #else
+#ifdef FP_64_SUPPORT
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-
+#endif
 __kernel void julia_full(__global uint* pixels, __global unsigned int* colors,
-                         int mm, double ofs_lx, double step_x, double ofs_ty,
-                         double step_y, double er, int max_iter, int pal,
-                         int show_z, double c_x, double c_y)
+                         int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty,
+                         FP_TYPE step_y, FP_TYPE er, int max_iter, int pal,
+                         int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #endif
 {
     int i;
     uint color = 0;
-    double j_x, j_y;
-    double z_julia_x, z_julia_y, d;
+    FP_TYPE j_x, j_y;
+    FP_TYPE z_julia_x, z_julia_y, d;
 
 #ifndef HOST_APP
     int x = get_global_id(0);

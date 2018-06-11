@@ -48,6 +48,12 @@ extern TTF_Font* font;
 #define STRING(VALUE) #VALUE
 #define STRING_MACRO(MACRO) STRING(MACRO)
 
+#ifdef FP_64_SUPPORT
+#define FP_TYPE double
+#else
+#define FP_TYPE float
+#endif
+
 int init_ocl();
 int close_ocl();
 
@@ -66,15 +72,15 @@ struct kernel_args
     void* pixels;
     unsigned int* colors;
     int mm;
-    double ofs_lx;
-    double ofs_rx;
-    double ofs_ty;
-    double ofs_by;
-    double er;
+    FP_TYPE ofs_lx;
+    FP_TYPE ofs_rx;
+    FP_TYPE ofs_ty;
+    FP_TYPE ofs_by;
+    FP_TYPE er;
     int max_iter;
     int pal;
     int show_z;
-    double c_x, c_y;
+    FP_TYPE c_x, c_y;
     int ofs_x, ofs_y;
 };
 

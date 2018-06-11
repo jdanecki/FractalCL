@@ -138,9 +138,12 @@ int create_kernels(struct ocl_device* dev, char* options)
         filesizes[i] = fractals[i].filesize;
     }
     sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
-                        "WIDTH=%d -D BPP=%d -D PITCH=%d",
+                        "WIDTH=%d -D BPP=%d -D PITCH=%d -D FP_TYPE=%s",
             options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP,
-            PITCH);
+            PITCH, STRING_MACRO(FP_TYPE));
+#ifdef FP_64_SUPPORT
+    strcat(cl_options, " -DFP_64_SUPPORT=1");
+#endif
     dev->program = clCreateProgramWithSource(
         dev->ctx, NR_FRACTALS, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)

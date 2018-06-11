@@ -24,7 +24,12 @@ find_package(OpenCL REQUIRED)
 
 include_directories(include)
 
+option(FP_64_SUPPORT "Use fp64 extension" ON)
+
 add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
+if(FP_64_SUPPORT)
+	add_definitions("-DFP_64_SUPPORT=1")
+endif()
 
 add_executable(FractalCL
     fractal_ocl.c

@@ -20,8 +20,8 @@
 
 typedef struct
 {
-    double x;
-    double y;
+    FP_TYPE x;
+    FP_TYPE y;
 } complex_t;
 
 complex_t complex_t_mul(complex_t a, complex_t b);
@@ -44,21 +44,21 @@ complex_t complex_t_add(complex_t a, complex_t b)
     return res;
 }
 
-double complex_t_modul(complex_t z);
-double complex_t_modul(complex_t z)
+FP_TYPE complex_t_modul(complex_t z);
+FP_TYPE complex_t_modul(complex_t z)
 {
-    double res;
+    FP_TYPE res;
 
     res = sqrt(z.x * z.x + z.y * z.y);
     return res;
 }
 
-double equation(int x, double x1, double y1, double x2, double y2);
-double equation(int x, double x1, double y1, double x2, double y2)
+FP_TYPE equation(int x, FP_TYPE x1, FP_TYPE y1, FP_TYPE x2, FP_TYPE y2);
+FP_TYPE equation(int x, FP_TYPE x1, FP_TYPE y1, FP_TYPE x2, FP_TYPE y2)
 {
-    double a = (y1 - y2) / (x1 - x2);
-    double b = (x1 * y2 - y1 * x2) / (x1 - x2);
-    double y = a * x + b;
+    FP_TYPE a = (y1 - y2) / (x1 - x2);
+    FP_TYPE b = (x1 * y2 - y1 * x2) / (x1 - x2);
+    FP_TYPE y = a * x + b;
 
     return y;
 }

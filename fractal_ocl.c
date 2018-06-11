@@ -33,33 +33,36 @@ volatile int nr_devices;
 pthread_cond_t cond_fin;
 pthread_mutex_t lock_fin;
 
-double zx = 1.0, zy = 1.0;   // zoom x, y
-double dx, dy;               // shift left/right, down/up
-double szx = 1.0, szy = 1.0; // scale x and y
-double mx, my; // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
+FP_TYPE zx = 1.0, zy = 1.0;   // zoom x, y
+FP_TYPE dx, dy;               // shift left/right, down/up
+FP_TYPE szx = 1.0, szy = 1.0; // scale x and y
+FP_TYPE mx, my; // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
 
 int mm = 16;
 
 #if 0
-double ofs_lx = -0.7402f;//-1.5f; //0.094; //-1.5f;
-double ofs_rx = -0.7164f; //-0.716403707741993;//1.5f; //0.096; //1.5f;
-double ofs_ty = 0.2205f;//0.283962759342063; //1.5f; //0.504f; //1.5f;
-double ofs_by = 0.1690f;//0.283962759341958; //-1.5f; //0.503f; //-1.5f;
+FP_TYPE ofs_lx = -0.7402f;//-1.5f; //0.094; //-1.5f;
+FP_TYPE ofs_rx = -0.7164f; //-0.716403707741993;//1.5f; //0.096; //1.5f;
+FP_TYPE ofs_ty = 0.2205f;//0.283962759342063; //1.5f; //0.504f; //1.5f;
+FP_TYPE ofs_by = 0.1690f;//0.283962759341958; //-1.5f; //0.503f; //-1.5f;
 #else
-double ofs_lx = -1.5f;
-double ofs_rx = 1.5f;
-double ofs_ty = 1.5f;
-double ofs_by = -1.5f;
+#define OFS_LX -1.5f
+#define OFS_RX 1.5f
+
+FP_TYPE ofs_lx = OFS_LX;
+FP_TYPE ofs_rx = OFS_RX;
+FP_TYPE ofs_ty = 1.5f;
+FP_TYPE ofs_by = -1.5f;
 #endif
-double er = 4.0f;
+FP_TYPE er = 4.0f;
 
 int max_iter = 360;
 int pal = 0; // 0=hsv 1=rgb
 int show_z;
-double c_x = 0.15f;
-double c_y = -0.60f;
-// double c_x = -0.7f;
-// double c_y = 0.27015f;
+FP_TYPE c_x = 0.15f;
+FP_TYPE c_y = -0.60f;
+// FP_TYPE c_x = -0.7f;
+// FP_TYPE c_y = 0.27015f;
 
 int bpp;
 char status_line[100];
@@ -277,10 +280,10 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     args->ofs_ty = ofs_ty;
     args->ofs_by = ofs_by;
 
-    double ofs_lx1 = (args->ofs_lx + dx) / szx;
-    double ofs_rx1 = (args->ofs_rx + dx) / szx;
-    double ofs_ty1 = (args->ofs_ty + dy) / szy;
-    double ofs_by1 = (args->ofs_by + dy) / szy;
+    FP_TYPE ofs_lx1 = (args->ofs_lx + dx) / szx;
+    FP_TYPE ofs_rx1 = (args->ofs_rx + dx) / szx;
+    FP_TYPE ofs_ty1 = (args->ofs_ty + dy) / szy;
+    FP_TYPE ofs_by1 = (args->ofs_by + dy) / szy;
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;
@@ -308,26 +311,28 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors))
         return 1;
     if (set_kernel_arg(kernel, name, 2, sizeof(cl_int), &mm)) return 1;
-    if (set_kernel_arg(kernel, name, 3, sizeof(double), &ofs_lx1)) return 1;
-    double step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
-    if (set_kernel_arg(kernel, name, 4, sizeof(double), &step_x)) return 1;
-    //	if (set_kernel_arg(kernel, name, 4, sizeof(double), &ofs_rx1)) return 1;
+    if (set_kernel_arg(kernel, name, 3, sizeof(FP_TYPE), &ofs_lx1)) return 1;
+    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &step_x)) return 1;
+    //	if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &ofs_rx1)) return
+    //1;
 
-    if (set_kernel_arg(kernel, name, 5, sizeof(double), &ofs_ty1)) return 1;
-    double step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
-    if (set_kernel_arg(kernel, name, 6, sizeof(double), &step_y)) return 1;
-    //	if (set_kernel_arg(kernel, name, 6, sizeof(double), &ofs_by1)) return 1;
+    if (set_kernel_arg(kernel, name, 5, sizeof(FP_TYPE), &ofs_ty1)) return 1;
+    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+    if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &step_y)) return 1;
+    //	if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &ofs_by1)) return
+    //1;
 
-    if (set_kernel_arg(kernel, name, 7, sizeof(double), &args->er)) return 1;
+    if (set_kernel_arg(kernel, name, 7, sizeof(FP_TYPE), &args->er)) return 1;
     if (set_kernel_arg(kernel, name, 8, sizeof(int), &args->max_iter)) return 1;
     if (set_kernel_arg(kernel, name, 9, sizeof(int), &args->pal)) return 1;
     if (set_kernel_arg(kernel, name, 10, sizeof(int), &args->show_z)) return 1;
     if (fractal == JULIA || fractal == JULIA_FULL || fractal == DRAGON ||
         fractal == JULIA3)
     {
-        if (set_kernel_arg(kernel, name, 11, sizeof(double), &args->c_x))
+        if (set_kernel_arg(kernel, name, 11, sizeof(FP_TYPE), &args->c_x))
             return 1;
-        if (set_kernel_arg(kernel, name, 12, sizeof(double), &args->c_y))
+        if (set_kernel_arg(kernel, name, 12, sizeof(FP_TYPE), &args->c_y))
             return 1;
 
         if (fractal == JULIA || fractal == JULIA3)
@@ -440,13 +445,13 @@ void* execute_fractal_cpu(void* c)
     int x, y;
     struct cpu_args* cpu = (struct cpu_args*)c;
 
-    double ofs_lx1 = (ofs_lx + dx) / szx;
-    double ofs_rx1 = (ofs_rx + dx) / szx;
-    double ofs_ty1 = (ofs_ty + dy) / szy;
-    double ofs_by1 = (ofs_by + dy) / szy;
+    FP_TYPE ofs_lx1 = (ofs_lx + dx) / szx;
+    FP_TYPE ofs_rx1 = (ofs_rx + dx) / szx;
+    FP_TYPE ofs_ty1 = (ofs_ty + dy) / szy;
+    FP_TYPE ofs_by1 = (ofs_by + dy) / szy;
 
-    double step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
-    double step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
 
     for (y = cpu->ys; y < cpu->ye; y++)
     {
@@ -674,8 +679,9 @@ void run_program()
                 frame_time += draw_one_frame();
             }
 
-            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x",
-                    max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm);
+            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f",
+                    max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
+                    (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
             write_text(status_line, 0, 0);
             sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y,
                     frame_time / draw_frames, cur_dev ? "GPU" : "CPU",

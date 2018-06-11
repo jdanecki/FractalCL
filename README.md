@@ -4,12 +4,13 @@ Discover and explore fractals world with OpenCL acceleration.
 
 # Features
 
-* Animated fractals
+* Interactive animated fractals
 * Mouse support to zoom in/out
 * Keyboard support for changing fractals/kernel parameters
-* OpenCL support to speed up fractals calculation
+* OpenCL support to speed up fractals calculations
 * 2 colors models: RGB and HSV
 * OpenCL kernels can be executed on CPU
+* fp64 support enabled by default, can be disabled
 
 # Requirements 
 
@@ -30,14 +31,16 @@ Discover and explore fractals world with OpenCL acceleration.
 * dragon
 ![dragon](dragon.png)
 
-# Tested platforms
+# Tested OpenCL implementations
 
-* Intel OpenCL GPU on Linux: https://github.com/intel/compute-runtime
+* Neo - Intel Graphics Compute Runtime for OpenCL: https://github.com/intel/compute-runtime
+* Beignet - OpenCL Library for Intel GPU's: https://cgit.freedesktop.org/beignet
 
 # Build instruction
 
 * Run configure script to configure project
 * Run make to build project
+* To disable fp64 support modify configure script
 
 # Run instruction
 

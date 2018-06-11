@@ -1,8 +1,12 @@
 #!/bin/bash
 
+#by default fp64 extention is enabled
+FP_64_SUPPORT=ON
+#FP_64_SUPPORT=OFF
+
 mkdir -p build
 cd build
-cmake ..
+cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} .. 
 
 ln -sf ../kernels/*.cl .
 ln -sf ../*.ttf .
