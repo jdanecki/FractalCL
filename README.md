@@ -11,11 +11,12 @@ Discover and explore fractals world with OpenCL acceleration.
 * 2 colors models: RGB and HSV
 * OpenCL kernels can be executed on CPU
 * fp64 support can be enabled
+* Suppport multiple OpenCL devices
 
 # Requirements 
 
 * SDL library
-* OpenCL GPU library
+* OpenCL library
 
 # Implemented fractals
 
