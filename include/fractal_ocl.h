@@ -16,8 +16,6 @@
 */
 
 #include <CL/cl.h>
-#include <SDL.h>
-#include <SDL_ttf.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
@@ -31,10 +29,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-extern const char* font_file;
-extern TTF_Font* font;
-
-#define FONT_SIZE 20
 
 #define WIDTH 1024
 #define HEIGHT 768
@@ -110,19 +104,21 @@ struct ocl_device
     cl_command_queue queue;
     cl_platform_id id;
     cl_context ctx;
-    int found;
+    int initialized;
     cl_program program;
     cl_kernel kernels[NR_FRACTALS];
     struct kernel_args args[NR_FRACTALS];
     cl_event event;
-    char name[256];
+    char name[100];
     unsigned int eu;
     size_t wgs;
     struct ocl_thread thread;
     cl_mem cl_colors;
     cl_mem cl_pixels;
     unsigned long execution;
+    int intel;
 };
 
-extern struct ocl_device intel;
+extern struct ocl_device* ocl_devices;
+extern int current_device;
 extern volatile int nr_devices;

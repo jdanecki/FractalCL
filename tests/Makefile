@@ -13,34 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(FractalCL)
-cmake_minimum_required(VERSION 3.2)
+OPENCL_LIB=$(shell pkg-config --libs OpenCL)
+INCLUDE=../include
+FP_64_SUPPORT=0
+CFLAGS="-march=native -mtune=native -g -Wall -Wno-deprecated-declarations" 
 
-find_package(PkgConfig)
-pkg_check_modules(SDL sdl)
-pkg_check_modules(SDL_TTF SDL_ttf)
+ifeq ($(FP_64_SUPPORT), 1)
+CFLAGS="$(CFLAGS) -DFP_64_SUPPORT=1"
+endif
 
-find_package(OpenCL REQUIRED)
-
-include_directories(include)
-
-option(FP_64_SUPPORT "Use fp64 extension" OFF)
-
-add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
-if(FP_64_SUPPORT)
-	add_definitions("-DFP_64_SUPPORT=1")
-endif()
-
-add_executable(FractalCL
-    fractal_ocl.c
-    ocl.c
-    include/fractal_complex.h
-    include/fractal_ocl.h
-)
-
-target_link_libraries(FractalCL
-	${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
-    ${OpenCL_LIBRARY}
-    -lm -lrt -lpthread -ldl
-)
+test_ocl: ../ocl.c test_ocl.c
+	gcc -g -Wall -o $@ test_ocl.c ../ocl.c -I$(INCLUDE) ${OPENCL_LIB} -lm -lrt -lpthread -ldl -Wno-deprecated-declarations
 

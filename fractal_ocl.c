@@ -24,11 +24,18 @@
 #include "kernels/julia_full.cl"
 #include "kernels/mandelbrot.cl"
 
+#include <SDL.h>
+#include <SDL_ttf.h>
+
+extern const char* font_file;
+extern TTF_Font* font;
+
+#define FONT_SIZE 20
+
 SDL_Surface* main_window;
 unsigned int* colors;
 
 volatile int tasks_finished;
-volatile int nr_devices;
 
 pthread_cond_t cond_fin;
 pthread_mutex_t lock_fin;
@@ -65,9 +72,9 @@ FP_TYPE c_y = -0.60f;
 // FP_TYPE c_y = 0.27015f;
 
 int bpp;
-char status_line[100];
+char status_line[200];
 
-int cur_dev = 1; // 0 - CPU, 1 - GPU
+int cur_dev = 1; // 0 - CPU, 1,..nr_devices - OCL devices
 
 enum fractals fractal = JULIA;
 
@@ -150,7 +157,7 @@ unsigned long get_time_usec()
 int prepare_pixels(struct ocl_device* dev)
 {
     int err;
-    if (!dev->found) return 0;
+    if (!dev->initialized) return 0;
     void* pixels;
 
     err = posix_memalign((void**)&pixels, 4096, IMAGE_SIZE);
@@ -163,7 +170,7 @@ int prepare_pixels(struct ocl_device* dev)
         printf("clCreateBuffer pixels returned %d\n", err);
         return 1;
     }
-    printf("GPU buffer created with size=%d\n", IMAGE_SIZE);
+    printf("OCL buffer created with size=%d\n", IMAGE_SIZE);
     return 0;
 }
 
@@ -175,69 +182,71 @@ int prepare_colors(struct ocl_device* dev)
 
     int err, v, iter;
 
-    if (!dev->found) return 0;
-
-    err = posix_memalign((void**)&colors, 4096, 4096);
-    if (err) return 1;
-
-    for (v = 0; v < 2; v++)
+    if (!dev->initialized) return 0;
+    if (!colors)
     {
-        for (iter = 0; iter < 360; iter++)
-        {
-            float h1 = (iter % 360) / 60.0;
-            float v1 = 1.0 * v;
-            int r, g, b;
-            float r1, g1, b1, i, f, p, q, t;
+        err = posix_memalign((void**)&colors, 4096, 4096);
+        if (err) return 1;
 
-            i = floor(h1);
-            f = h1 - i;
-            p = 0;
-            q = v1 * (1.0 - f);
-            t = v1 * (1.0 - (1.0 - f));
-            switch ((int)i)
+        for (v = 0; v < 2; v++)
+        {
+            for (iter = 0; iter < 360; iter++)
             {
-            case 0:
-                r1 = v1;
-                g1 = t;
-                b1 = p;
-                break;
-            case 1:
-                r1 = q;
-                g1 = v1;
-                b1 = p;
-                break;
-            case 2:
-                r1 = p;
-                g1 = v1;
-                b1 = t;
-                break;
-            case 3:
-                r1 = p;
-                g1 = q;
-                b1 = v1;
-                break;
-            case 4:
-                r1 = t;
-                g1 = p;
-                b1 = v1;
-                break;
-            case 5:
-                r1 = v1;
-                g1 = p;
-                b1 = q;
-                break;
+                float h1 = (iter % 360) / 60.0;
+                float v1 = 1.0 * v;
+                int r, g, b;
+                float r1, g1, b1, i, f, p, q, t;
+
+                i = floor(h1);
+                f = h1 - i;
+                p = 0;
+                q = v1 * (1.0 - f);
+                t = v1 * (1.0 - (1.0 - f));
+                switch ((int)i)
+                {
+                case 0:
+                    r1 = v1;
+                    g1 = t;
+                    b1 = p;
+                    break;
+                case 1:
+                    r1 = q;
+                    g1 = v1;
+                    b1 = p;
+                    break;
+                case 2:
+                    r1 = p;
+                    g1 = v1;
+                    b1 = t;
+                    break;
+                case 3:
+                    r1 = p;
+                    g1 = q;
+                    b1 = v1;
+                    break;
+                case 4:
+                    r1 = t;
+                    g1 = p;
+                    b1 = v1;
+                    break;
+                case 5:
+                    r1 = v1;
+                    g1 = p;
+                    b1 = q;
+                    break;
+                }
+                r = roundf(255.0 * r1);
+                r &= 0xff;
+                g = roundf(255.0 * g1);
+                g &= 0xff;
+                b = roundf(255.0 * b1);
+                b &= 0xff;
+                colors[iter + v * 360] = 0xff000000 | r << 16 | g << 8 | b;
             }
-            r = roundf(255.0 * r1);
-            r &= 0xff;
-            g = roundf(255.0 * g1);
-            g &= 0xff;
-            b = roundf(255.0 * b1);
-            b &= 0xff;
-            colors[iter + v * 360] = 0xff000000 | r << 16 | g << 8 | b;
         }
+        colors[0] = 0;
+        colors[360] = 0;
     }
-    colors[0] = 0;
-    colors[360] = 0;
     dev->cl_colors = clCreateBuffer(
         dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, colors, &err);
     if (err != CL_SUCCESS)
@@ -315,13 +324,13 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
     if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &step_x)) return 1;
     //	if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &ofs_rx1)) return
-    //1;
+    // 1;
 
     if (set_kernel_arg(kernel, name, 5, sizeof(FP_TYPE), &ofs_ty1)) return 1;
     FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
     if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &step_y)) return 1;
     //	if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &ofs_by1)) return
-    //1;
+    // 1;
 
     if (set_kernel_arg(kernel, name, 7, sizeof(FP_TYPE), &args->er)) return 1;
     if (set_kernel_arg(kernel, name, 8, sizeof(int), &args->max_iter)) return 1;
@@ -354,6 +363,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
     // NULL, &dev->event);
     //
+    //    printf("%s: clEnqueueNDRangeKernel %s\n", dev->name, name);
 
     tp1 = get_time_usec();
 
@@ -361,8 +371,8 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
                                  NULL);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clEnqueueNDRangeKernel %s gpu main returned %d\n",
-               dev->name, name, err);
+        printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name,
+               err);
         return 1;
     }
     // clFlush(dev->queue);
@@ -385,12 +395,13 @@ void* gpu_kernel(void* d)
 
     while (!finish_thread && !err)
     {
+        //        printf("%s: waiting for work\n", dev->name);
         pthread_mutex_lock(&t->lock);
         while (!t->work)
         {
             if (finish_thread)
             {
-                //		  printf("thread exits\n");
+                printf("%s: thread exits\n", dev->name);
                 return NULL;
             }
             pthread_cond_wait(&t->cond, &t->lock);
@@ -416,21 +427,26 @@ void* gpu_kernel(void* d)
         pthread_cond_broadcast(&cond_fin);
         pthread_mutex_unlock(&lock_fin);
     }
-    // printf("thread exits\n");
+    printf("%s: thread exits\n", dev->name);
     sleep(1);
     return NULL;
 }
 
 int signal_device(struct ocl_device* dev)
 {
-    if (!dev->found) return 0;
-    if (dev->thread.finished) return 0;
+    //	printf("signal current device: %s\n", dev->name);
+    if (!dev->initialized) return 1;
+    if (dev->thread.finished)
+    {
+        printf("%s: thread already finished\n", dev->name);
+        return 1;
+    }
 
     pthread_mutex_lock(&dev->thread.lock);
     dev->thread.work = 1;
     pthread_cond_signal(&dev->thread.cond);
     pthread_mutex_unlock(&dev->thread.lock);
-    return 1;
+    return 0;
 }
 
 struct cpu_args
@@ -550,27 +566,33 @@ void start_cpu()
     cpu_execution = tp2 - tp1;
 }
 
-void start_gpu()
+void start_ocl()
 {
     int err;
     if (!nr_devices) return;
-    if (signal_device(&intel) == 0) return;
+
+    if (!signal_device(&ocl_devices[current_device]) == 0)
+    {
+        printf("can't signal device\n");
+        return;
+    }
 
     pthread_mutex_lock(&lock_fin);
-    //  printf("waiting\n");
-    while (tasks_finished != nr_devices)
+    //    printf("waiting for finished tasks\n");
+    while (!tasks_finished)
     {
         pthread_cond_wait(&cond_fin, &lock_fin);
     }
-    //  printf("tasks finished\n");
+    //    printf("tasks finished\n");
     tasks_finished = 0;
     pthread_mutex_unlock(&lock_fin);
 
-    if (intel.found)
+    if (ocl_devices[current_device].initialized)
     {
         void* px1;
 
-        px1 = clEnqueueMapBuffer(intel.queue, intel.cl_pixels, CL_TRUE,
+        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue,
+                                 ocl_devices[current_device].cl_pixels, CL_TRUE,
                                  CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0,
                                  NULL, NULL, &err);
         if (err != CL_SUCCESS)
@@ -581,15 +603,16 @@ void start_gpu()
         {
             memcpy(main_window->pixels, px1, IMAGE_SIZE);
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);
-            clEnqueueUnmapMemObject(intel.queue, intel.cl_pixels, px1, 0, NULL,
-                                    NULL);
+            clEnqueueUnmapMemObject(ocl_devices[current_device].queue,
+                                    ocl_devices[current_device].cl_pixels, px1,
+                                    0, NULL, NULL);
         }
     }
 }
 
 int prepare_thread(struct ocl_device* dev)
 {
-    if (!dev->found) return 0;
+    if (!dev->initialized) return 0;
 
     dev->thread.work = 0;
     if (pthread_mutex_init(&dev->thread.lock, NULL)) return 1;
@@ -606,7 +629,7 @@ unsigned long draw_one_frame()
 
     if (cur_dev)
     {
-        start_gpu();
+        start_ocl();
     }
     else
     {
@@ -626,7 +649,7 @@ void run_program()
     int draw_frames = 16;
     int flip_window = 0;
     float m1x, m1y;
-
+    int i;
     int draw = 1;
     /*r.w = WIDTH;
   r.h = HEIGHT;
@@ -636,14 +659,15 @@ void run_program()
     if (init_ocl()) return;
     init_window();
     init_font();
-
-    if (prepare_colors(&intel)) return;
-    if (prepare_pixels(&intel)) return;
-
     if (pthread_mutex_init(&lock_fin, NULL)) return;
     if (pthread_cond_init(&cond_fin, NULL)) return;
 
-    if (prepare_thread(&intel)) return;
+    for (i = 0; i < nr_devices; i++)
+    {
+        if (prepare_colors(&ocl_devices[i])) return;
+        if (prepare_pixels(&ocl_devices[i])) return;
+        if (prepare_thread(&ocl_devices[i])) return;
+    }
 
     while (1)
     {
@@ -684,10 +708,16 @@ void run_program()
                     (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
             write_text(status_line, 0, 0);
             sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y,
-                    frame_time / draw_frames, cur_dev ? "GPU" : "CPU",
-                    cur_dev ? intel.execution : cpu_execution);
+                    frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
+                    cur_dev ? ocl_devices[current_device].execution
+                            : cpu_execution);
             write_text(status_line, WIDTH / 2, HEIGHT - FONT_SIZE);
-
+            if (cur_dev)
+            {
+                sprintf(status_line, "OCL[%d/%d]: %s", current_device,
+                        nr_devices, ocl_devices[current_device].name);
+                write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
+            }
             draw_frames = 1;
             stop_animation = 0;
             flip_window = 1;
@@ -877,13 +907,14 @@ void run_program()
                     er = 0.9f;
                     ofs_lx = 0.0f;
                     ofs_ty = 0.0f;
-                    if (intel.found)
+                    if (ocl_devices[current_device].initialized)
                     {
                         void* px1;
                         int err;
 
                         px1 = clEnqueueMapBuffer(
-                            intel.queue, intel.cl_pixels, CL_TRUE,
+                            ocl_devices[current_device].queue,
+                            ocl_devices[current_device].cl_pixels, CL_TRUE,
                             CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL,
                             NULL, &err);
                         if (err != CL_SUCCESS)
@@ -895,9 +926,10 @@ void run_program()
                         else
                         {
                             memset(px1, 0, IMAGE_SIZE);
-                            clEnqueueUnmapMemObject(intel.queue,
-                                                    intel.cl_pixels, px1, 0,
-                                                    NULL, NULL);
+                            clEnqueueUnmapMemObject(
+                                ocl_devices[current_device].queue,
+                                ocl_devices[current_device].cl_pixels, px1, 0,
+                                NULL, NULL);
                         }
                     }
                     break;
@@ -911,7 +943,12 @@ void run_program()
                     ofs_ty = 1.5f;
                     break;
                 case 'v':
-                    cur_dev ^= 1;
+                    cur_dev++;
+                    if (cur_dev > nr_devices) cur_dev = 0;
+                    if (cur_dev)
+                    {
+                        current_device = cur_dev - 1;
+                    }
                     break;
                 }
                 draw = 1;

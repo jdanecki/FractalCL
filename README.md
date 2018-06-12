@@ -10,7 +10,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * OpenCL support to speed up fractals calculations
 * 2 colors models: RGB and HSV
 * OpenCL kernels can be executed on CPU
-* fp64 support enabled by default, can be disabled
+* fp64 support can be enabled
 
 # Requirements 
 
@@ -35,6 +35,7 @@ Discover and explore fractals world with OpenCL acceleration.
 
 * Neo - Intel Graphics Compute Runtime for OpenCL: https://github.com/intel/compute-runtime
 * Beignet - OpenCL Library for Intel GPU's: https://cgit.freedesktop.org/beignet
+* OpenCL CPU - OpenCL Runtime for Intel Core and Intel Xeon Processors https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime
 
 # Build instruction
 

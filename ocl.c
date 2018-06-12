@@ -17,28 +17,30 @@
 
 #include "fractal_ocl.h"
 
-struct ocl_device intel;
+volatile int nr_devices;
+struct ocl_device* ocl_devices;
+int current_device;
 struct ocl_fractal fractals[NR_FRACTALS];
 
-int create_ocl_device(char* plat_name, cl_platform_id id)
+int create_ocl_device(int di, char* plat_name, cl_platform_id id)
 {
     int err;
     unsigned int num;
-    struct ocl_device* dev;
+    struct ocl_device* dev = &ocl_devices[di];
     size_t size;
     char name[256];
     cl_context_properties prop[3];
 
-    if (!strncmp(plat_name, "Intel", 5)) dev = &intel;
+    if (!strncmp(plat_name, "Intel", 5)) dev->intel = 1;
 
-    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_GPU, 0, NULL, &num);
+    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0, NULL, &num);
     if ((err != CL_SUCCESS) || (num != 1))
     {
         printf("OCL GPU device not found err=%d\n", err);
         return 1;
     }
 
-    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_GPU, 1, &dev->gpu, NULL);
+    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 1, &dev->gpu, NULL);
     err = clGetDeviceInfo(dev->gpu, CL_DEVICE_NAME, 0, NULL, &size);
     if (size > 255) return 1;
     err = clGetDeviceInfo(dev->gpu, CL_DEVICE_NAME, size, name, NULL);
@@ -75,7 +77,7 @@ int create_ocl_device(char* plat_name, cl_platform_id id)
         return 1;
     }
     dev->id = id;
-    dev->found = 1;
+    dev->initialized = 1;
     return 0;
 }
 
@@ -128,7 +130,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     char* sources[NR_FRACTALS];
     char cl_options[1024];
     size_t filesizes[NR_FRACTALS];
-    if (!dev->found) return 0;
+    if (!dev->initialized) return 0;
 
     printf("prepare kernels for %s\n", dev->name);
 
@@ -213,10 +215,10 @@ void close_fractal(enum fractals fractal)
 
 int init_ocl()
 {
-    int err, i;
+    int err = 0, i;
     size_t size;
     unsigned int nr_platforms;
-    cl_platform_id platforms_ids[2];
+    cl_platform_id* platforms_ids;
     char name[256];
 
     err = clGetPlatformIDs(0, NULL, &nr_platforms);
@@ -231,44 +233,54 @@ int init_ocl()
         printf("OCL platforms not found\n");
         return 1;
     }
-    if (nr_platforms > 2)
-    {
-        printf("more than 2 platforms not supported\n");
-        return 1;
-    }
+    platforms_ids = malloc(nr_platforms * sizeof(cl_platform_id));
     err = clGetPlatformIDs(nr_platforms, platforms_ids, NULL);
     if (err != CL_SUCCESS)
     {
         printf("clGetPlatformIDs returned %d\n", err);
-        return 1;
+        err = 1;
+        goto deallocate_return;
     }
 
+    ocl_devices = calloc(nr_platforms, sizeof(struct ocl_device));
     for (i = 0; i < nr_platforms; i++)
     {
         err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, 0, NULL,
                                 &size);
-        if (size > 255) return 1;
+        if (size > 99)
+        {
+            err = 1;
+            goto deallocate_return;
+        }
         err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, size, name,
                                 NULL);
         printf("--- platform: %s\n", name);
-        if (create_ocl_device(name, platforms_ids[i])) return 1;
+        if (create_ocl_device(i, name, platforms_ids[i]))
+        {
+            err = 1;
+            goto deallocate_return;
+        }
+        nr_devices++;
     }
-    nr_devices = intel.found;
+    current_device = 0;
     open_fractal(JULIA, "julia");
     open_fractal(MANDELBROT, "mandelbrot");
     open_fractal(JULIA_FULL, "julia_full");
     open_fractal(DRAGON, "dragon");
     open_fractal(JULIA3, "julia3");
 
-    if (create_kernels(&intel, "-w")) return 1;
+    for (i = 0; i < nr_devices; i++)
+        err |= create_kernels(&ocl_devices[i], "-w");
 
-    return 0;
+deallocate_return:
+    free(platforms_ids);
+    return err;
 }
 
 void close_device(struct ocl_device* dev)
 {
     int err, i;
-    if (!dev->found) return;
+    if (!dev->initialized) return;
 
     pthread_cond_signal(&dev->thread.cond);
 
@@ -305,8 +317,8 @@ void close_device(struct ocl_device* dev)
 int close_ocl()
 {
     int i;
-    close_device(&intel);
-
+    for (i = 0; i < nr_devices; i++) close_device(&ocl_devices[i]);
+    free(ocl_devices);
     for (i = 0; i < NR_FRACTALS; i++)
     {
         close_fractal(i);

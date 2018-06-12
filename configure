@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#by default fp64 extention is enabled
-FP_64_SUPPORT=ON
-#FP_64_SUPPORT=OFF
+#by default fp64 extention is disabled
+#FP_64_SUPPORT=ON
+FP_64_SUPPORT=OFF
 
 mkdir -p build
 cd build
