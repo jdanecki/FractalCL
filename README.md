@@ -49,3 +49,35 @@ Discover and explore fractals world with OpenCL acceleration.
 * Execute FractalCL application in build directory. Use mouse and keyboard to change fractals parameters.
 * Press ESC key to exit application.
 
+# Mouse usage
+
+* left button - increase zoom
+* right button - decrease zoom
+* middle button - stop animation
+
+# Keyboard usage
+
+* ESC - exit application
+* i/u - increase/decrease number of calculation's iteriations
+* o/p/k/l/n/m - change color in RGB mode
+* LEFT/RIGTH - scale horizontally by 0.01
+* UP/DOWN - scale vertically
+* a/d - shift left/right
+* s/w - shift down/up
+* z/x - decrease/increase limit for compared modulus
+* comma/period - scale horizontally and vertically
+* h - change color pallette: RGB/HSV
+* [/] - decrease/increase c (real part) of complex number (z^2 + c, z^3 + c)
+* -/= - decrease/increase c (imaginary part) of complex number (z^2 + c, z^3 + c)
+* F1 - select Julia fractal z^2 + c
+* F2 - select Mandelbrot fractal z^2 + c
+* F3 - select Julia with gws aligned with window size
+* F4 - select dragon fractal
+* F5 - select Julia z^3 + c
+* v - change device used for calculation:
+      0 = CPU
+      1,..., n = OCL device
+* 1 - show calculated complex number
+* 2 - multiply gws (global workgroup size) by 2
+* 3 - divide gws (global workgroup size) by 2
+
