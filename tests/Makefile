@@ -22,6 +22,6 @@ ifeq ($(FP_64_SUPPORT), 1)
 CFLAGS="$(CFLAGS) -DFP_64_SUPPORT=1"
 endif
 
-test_ocl: ../ocl.c test_ocl.c
+test_ocl: ../ocl.c test_ocl.c Makefile
 	gcc -g -Wall -o $@ test_ocl.c ../ocl.c -I$(INCLUDE) ${OPENCL_LIB} -lm -lrt -lpthread -ldl -Wno-deprecated-declarations
 

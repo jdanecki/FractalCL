@@ -31,7 +31,7 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors,
 #ifdef HOST_APP
             if (rand() % 20 <= 10) select_move = 1;
 #else
-            if (cos(3.14 * sin(1.0 * r * r)) > er) select_move = 1;
+            if (cos(3.14f * sin(1.0f * r * r)) > er) select_move = 1;
 #endif
             if (select_move)
             {
