@@ -32,8 +32,10 @@ extern TTF_Font* font;
 
 #define FONT_SIZE 20
 
-SDL_Surface* main_window;
+SDL_Renderer* main_window;
+SDL_Texture* texture;
 unsigned int* colors;
+void* cpu_pixels;
 
 volatile int tasks_finished;
 
@@ -71,7 +73,6 @@ FP_TYPE c_y = -0.60f;
 // FP_TYPE c_x = -0.7f;
 // FP_TYPE c_y = 0.27015f;
 
-int bpp;
 char status_line[200];
 
 int cur_dev = 1; // 0 - CPU, 1,..nr_devices - OCL devices
@@ -80,18 +81,21 @@ enum fractals fractal = JULIA;
 
 int gws_x = WIDTH / 4;
 int gws_y = HEIGHT / 4;
+unsigned long render_time;
 
 int init_window()
 {
+    SDL_Window* app_window;
     if (SDL_Init(SDL_INIT_VIDEO) < 0) return 1;
-    main_window = SDL_SetVideoMode(WIDTH, HEIGHT, 0, SDL_SWSURFACE);
+#ifdef SDL_ACCELERATED
+    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED | SDL_WINDOW_OPENGL, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_ACCELERATED);
+#else
+    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_SOFTWARE);
+#endif
 
-    const SDL_VideoInfo* info = SDL_GetVideoInfo();
-    bpp = info->vfmt->BitsPerPixel;
-    printf("BitsPerPixel=%d\n", bpp);
-
-    SDL_WM_SetCaption("FractalCL", "FractalCL");
-    SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+    texture = SDL_CreateTexture(main_window, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
     return 0;
 }
 
@@ -116,7 +120,8 @@ void init_font()
 
 void write_text(const char* t, int x, int y)
 {
-    SDL_Surface *temp, *text_box;
+    SDL_Surface* temp;
+    SDL_Texture* text_box;
     SDL_Rect dest;
     SDL_Color text_color;
     SDL_Color shade_color;
@@ -137,13 +142,16 @@ void write_text(const char* t, int x, int y)
         exit(0);
     }
 
-    text_box = SDL_DisplayFormat(temp);
+    text_box = SDL_CreateTextureFromSurface(main_window, temp);
     SDL_FreeSurface(temp);
 
     dest.x = x;
     dest.y = y;
-    SDL_BlitSurface(text_box, NULL, main_window, &dest);
-    SDL_FreeSurface(text_box);
+    dest.w = temp->w;
+    dest.h = temp->h;
+
+    SDL_RenderCopy(main_window, text_box, NULL, &dest);
+    SDL_DestroyTexture(text_box);
 }
 
 unsigned long get_time_usec()
@@ -160,7 +168,7 @@ int prepare_pixels(struct ocl_device* dev)
     if (!dev->initialized) return 0;
     void* pixels;
 
-    err = posix_memalign((void**)&pixels, 4096, IMAGE_SIZE);
+    if (posix_memalign((void**)&pixels, 4096, IMAGE_SIZE)) return 1;
     dev->cl_pixels = clCreateBuffer(dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, IMAGE_SIZE, pixels, &err);
 
     if (err != CL_SUCCESS)
@@ -487,19 +495,18 @@ void* execute_fractal_cpu(void* c)
             switch (fractal)
             {
             case JULIA:
-                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
-                      show_z, c_x, c_y);
+                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x,
+                      c_y);
                 break;
             case JULIA3:
-                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
-                       show_z, c_x, c_y);
+                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x,
+                       c_y);
                 break;
             case JULIA_FULL:
-                julia_full(x, y, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia_full(x, y, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
                 break;
             case MANDELBROT:
-                mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
-                           show_z);
+                mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
                 break;
             default:
                 return NULL;
@@ -531,8 +538,8 @@ void start_cpu()
 
     if (fractal == DRAGON)
     {
-        memset(main_window->pixels, 0, IMAGE_SIZE);
-        dragon(0, 0, main_window->pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er, max_iter, pal, show_z, c_x, c_y);
+        memset(cpu_pixels, 0, IMAGE_SIZE);
+        dragon(0, 0, cpu_pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er, max_iter, pal, show_z, c_x, c_y);
     }
     else
     {
@@ -568,6 +575,7 @@ void start_cpu()
     }
     tp2 = get_time_usec();
     cpu_execution = tp2 - tp1;
+    SDL_UpdateTexture(texture, NULL, cpu_pixels, WIDTH * 4);
 }
 
 void start_ocl()
@@ -603,7 +611,7 @@ void start_ocl()
         }
         else
         {
-            memcpy(main_window->pixels, px1, IMAGE_SIZE);
+            SDL_UpdateTexture(texture, NULL, px1, WIDTH * 4);
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);
             clEnqueueUnmapMemObject(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, px1, 0, NULL, NULL);
         }
@@ -643,19 +651,15 @@ void run_program()
 {
     SDL_Event event;
     int button;
-    int click = 0;
+    int animate = 0;
     int key = 0;
-    int stop_animation = 0;
+    int stop_animation = 1;
     int draw_frames = 16;
     int flip_window = 0;
     float m1x, m1y;
     int i;
     int draw = 1;
-    /*r.w = WIDTH;
-  r.h = HEIGHT;
-  r.x = 0;
-  r.y = 0;
-  */
+
     if (init_ocl()) return;
     init_window();
     init_font();
@@ -669,11 +673,10 @@ void run_program()
         if (prepare_thread(&ocl_devices[i])) return;
     }
 
+    if (posix_memalign((void**)&cpu_pixels, 4096, IMAGE_SIZE)) return;
     while (1)
     {
-        // SDL_FillRect(main_window, &r, 0);
-
-        if (click || key)
+        if (animate || key)
         {
             ofs_lx = (ofs_lx - mx) * zx + mx;
             ofs_rx = (ofs_rx - mx) * zx + mx;
@@ -688,7 +691,7 @@ void run_program()
                 dy = 0;
 
                 draw = 0;
-                click = 0;
+                animate = 0;
                 draw_frames = 16;
                 stop_animation = 1;
             }
@@ -697,26 +700,6 @@ void run_program()
 
         if (draw || stop_animation)
         {
-            int pixel;
-            unsigned long frame_time = 0;
-            for (pixel = 0; pixel < draw_frames; pixel++)
-            {
-                frame_time += draw_one_frame();
-            }
-
-            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f", max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
-                    (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
-            write_text(status_line, 0, 0);
-            sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y, frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
-                    cur_dev ? ocl_devices[current_device].execution : cpu_execution);
-            write_text(status_line, WIDTH / 2, HEIGHT - FONT_SIZE);
-            if (cur_dev)
-            {
-                sprintf(status_line, "OCL[%d/%d]: %s %s", current_device + 1, nr_devices, ocl_devices[current_device].name,
-                        ocl_devices[current_device].fp64 ? "fp64" : "fp32");
-                write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
-            }
-            draw_frames = 1;
             stop_animation = 0;
             flip_window = 1;
         }
@@ -728,13 +711,40 @@ void run_program()
         if (flip_window)
         {
             float m2x, m2y;
+            int pixel;
+            unsigned long frame_time = 0;
+            unsigned long tp1, tp2;
+
+            flip_window = 0;
+            tp1 = get_time_usec();
+
+            for (pixel = 0; pixel < draw_frames; pixel++)
+            {
+                frame_time += draw_one_frame();
+            }
+            SDL_RenderCopy(main_window, texture, NULL, NULL);
+
             m2x = equation(m1x, 0, ofs_lx, WIDTH, ofs_rx);
             m2y = equation(m1y, 0, ofs_ty, HEIGHT, ofs_by);
-            sprintf(status_line, "[%2.15f,%2.15f]", m2x, m2y);
-            write_text(status_line, 10, HEIGHT - FONT_SIZE);
-            SDL_Flip(main_window);
+
+            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f", max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
+                    (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
+            write_text(status_line, 0, 0);
+            sprintf(status_line, "[%2.15f,%2.15f] time=%-5lu %s=%-5lu render=%-5lu", m2x, m2y, frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
+                    cur_dev ? ocl_devices[current_device].execution : cpu_execution, render_time);
+            write_text(status_line, 0, HEIGHT - FONT_SIZE);
+            if (cur_dev)
+            {
+                sprintf(status_line, "OCL[%d/%d]: %s %s gws=[%3d,%3d] ", current_device + 1, nr_devices, ocl_devices[current_device].name,
+                        ocl_devices[current_device].fp64 ? "fp64" : "fp32", gws_x, gws_y);
+                write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
+            }
+            SDL_RenderPresent(main_window);
+            tp2 = get_time_usec();
+            render_time = tp2 - tp1;
+            //		    printf("render time=%lu\n", render_time);
         }
-        if (!click) draw = 0;
+        if (!animate) draw = 0;
         if (key)
         {
             draw = 0;
@@ -747,7 +757,6 @@ void run_program()
             if (event.type == SDL_KEYDOWN)
             {
                 int kl = event.key.keysym.sym;
-                draw_frames = 16;
                 switch (kl)
                 {
                 case 27:
@@ -944,6 +953,7 @@ void run_program()
                     break;
                 }
                 draw = 1;
+                draw_frames = 16;
             }
 
             if (event.type == SDL_MOUSEMOTION)
@@ -961,7 +971,7 @@ void run_program()
                     dy = 0;
 
                     draw = 0;
-                    click = 0;
+                    animate = 0;
                     draw_frames = 16;
                     stop_animation = 1;
                     continue;
@@ -984,7 +994,8 @@ void run_program()
                         zx += 0.001;
                         zy += 0.001;
                     }
-                    click = 1;
+                    animate = 1;
+                    draw_frames = 1;
                 }
 
                 if (event.button.button == 1)
@@ -1001,7 +1012,8 @@ void run_program()
                         zx -= 0.001;
                         zy -= 0.001;
                     }
-                    click = 1;
+                    animate = 1;
+                    draw_frames = 1;
                 }
                 button = event.button.button;
 
@@ -1009,7 +1021,7 @@ void run_program()
             }
             if (event.type == SDL_MOUSEBUTTONUP)
             {
-                //   click = 0;
+                //   animate = 0;
             }
         }
     }

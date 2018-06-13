@@ -17,18 +17,23 @@ project(FractalCL)
 cmake_minimum_required(VERSION 3.2)
 
 find_package(PkgConfig)
-pkg_check_modules(SDL sdl)
-pkg_check_modules(SDL_TTF SDL_ttf)
+pkg_check_modules(SDL sdl2)
+pkg_check_modules(SDL_TTF SDL2_ttf)
 
 find_package(OpenCL REQUIRED)
 
 include_directories(include)
 
-option(FP_64_SUPPORT "Use fp64 extension" OFF)
+option(FP_64_SUPPORT "Use fp64 extension" ON)
+option(SDL_ACCELERATED "Use SDL with GPU acceleration" OFF)
 
 add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
 if(FP_64_SUPPORT)
 	add_definitions("-DFP_64_SUPPORT=1")
+endif()
+
+if(SDL_ACCELERATED)
+	add_definitions("-DSDL_ACCELERATED=1")
 endif()
 
 add_executable(FractalCL

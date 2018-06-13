@@ -8,9 +8,12 @@ FP_64_SUPPORT=ON
 #float will be used even device supports cl_khr_fp64
 #FP_64_SUPPORT=OFF
 
+#Use SDL with GPU acceleration, disabled by default
+SDL_ACCELERATED=OFF
+
 mkdir -p build
 cd build
-cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} ..
+cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} -DSDL_ACCELERATED=${SDL_ACCELERATED} ..
 
 ln -sf ../kernels/*.cl .
 ln -sf ../*.ttf .
