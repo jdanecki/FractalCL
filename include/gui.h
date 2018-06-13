@@ -28,3 +28,10 @@ extern SDL_Texture* texture;
 int init_window();
 void write_text(const char* t, int x, int y);
 unsigned long get_time_usec();
+void draw_box(int x, int y, int w, int h, int r, int g, int b);
+
+void draw_double(int y, char* txt, double val);
+void draw_int(int y, char* txt, int val);
+void draw_string(int y, char* txt, char* val);
+void draw_hex(int y, char* txt, int val);
+void draw_long(int y, char* txt, unsigned long val);

@@ -17,10 +17,11 @@
 
 #define FONT_SIZE 20
 #define WIDTH 1024
+#define RIGTH_PANEL_WIDTH 230
+#define WINDOW_WIDTH (WIDTH + RIGTH_PANEL_WIDTH)
 #define HEIGHT 768
 #define WIDTH_FL (WIDTH * 1.0f)
 #define HEIGHT_FL (HEIGHT * 1.0f)
-
 #define BPP 4
 #define PITCH (WIDTH * BPP)
 #define IMAGE_SIZE (WIDTH * HEIGHT * BPP)

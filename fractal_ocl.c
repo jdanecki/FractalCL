@@ -571,9 +571,15 @@ void run_program()
     float m1x, m1y;
     int i;
     int draw = 1;
+    SDL_Rect window_rec;
 
     if (init_ocl()) return;
     init_window();
+
+    window_rec.w = WIDTH;
+    window_rec.h = HEIGHT;
+    window_rec.x = 0;
+    window_rec.y = 0;
 
     if (pthread_mutex_init(&lock_fin, NULL)) return;
     if (pthread_cond_init(&cond_fin, NULL)) return;
@@ -634,16 +640,46 @@ void run_program()
             {
                 frame_time += draw_one_frame();
             }
-            SDL_RenderCopy(main_window, texture, NULL, NULL);
+            SDL_RenderCopy(main_window, texture, NULL, &window_rec);
 
             m2x = equation(m1x, 0, ofs_lx, WIDTH, ofs_rx);
             m2y = equation(m1y, 0, ofs_ty, HEIGHT, ofs_by);
 
-            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f", max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
-                    (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
-            write_text(status_line, 0, 0);
-            sprintf(status_line, "[%2.15f,%2.15f] time=%-5lu %s=%-5lu render=%-5lu", m2x, m2y, frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
-                    cur_dev ? ocl_devices[current_device].execution : cpu_execution, render_time);
+            draw_string(0, "===", " Main ====");
+            draw_int(1, "F1-F5 fractal", fractal);
+            draw_int(2, "v device", cur_dev);
+            draw_int(3, "1 show_z", show_z);
+
+            draw_string(4, "==", " Parameters ===");
+
+            draw_int(5, "u/i iter", max_iter);
+            draw_double(6, "z/x er", er);
+            draw_double(7, "[/] c_x", c_x);
+            draw_double(8, "-/= c_y", c_y);
+            draw_int(9, "2/3 gws_x", gws_x);
+            draw_int(10, "2/3 gws_y", gws_y);
+            draw_double(11, "zoom", (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
+
+            draw_string(12, "===", " Colors ====");
+            draw_string(13, "h pal", (pal) ? "RGB" : "HSV");
+            draw_hex(14, "o/p mm", mm);
+            draw_hex(15, "k/l mm", mm);
+            draw_hex(16, "n/m mm", mm);
+
+            draw_string(17, "===", " Moves ====");
+            draw_double(18, "Left/Right szx", szx);
+            draw_double(19, "Down/Up szy", szy);
+            draw_double(20, ",/. szx", szx);
+            draw_double(21, ",/. szy", szy);
+            draw_double(22, "a/d dx", dx);
+            draw_double(23, "w/s dy", dy);
+
+            draw_string(25, "=", " Benchmarking ==");
+            draw_long(26, "time", frame_time / draw_frames);
+            draw_long(27, "exec", cur_dev ? ocl_devices[current_device].execution : cpu_execution);
+            draw_long(28, "render", render_time);
+
+            sprintf(status_line, "[%2.15f,%2.15f] %s", m2x, m2y, cur_dev ? "OCL" : "CPU");
             write_text(status_line, 0, HEIGHT - FONT_SIZE);
             if (cur_dev)
             {
@@ -870,13 +906,16 @@ void run_program()
 
             if (event.type == SDL_MOUSEMOTION)
             {
+                if (event.button.x > WIDTH) continue;
                 m1x = event.button.x;
                 m1y = event.button.y;
                 flip_window = 1;
+                draw_frames = 1;
             }
 
             if (event.type == SDL_MOUSEBUTTONDOWN)
             {
+                if (event.button.x > WIDTH) continue;
                 if (event.button.button == 2)
                 {
                     dx = 0;

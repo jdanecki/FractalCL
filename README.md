@@ -2,6 +2,8 @@
 
 Discover and explore fractals world with OpenCL acceleration.
 
+![parameters](parameters.png)
+
 # Features
 
 * Interactive animated fractals
@@ -14,25 +16,6 @@ Discover and explore fractals world with OpenCL acceleration.
 * fp64 support checked at runtime, can be disabled in configuration (configure script)
 * Suppport multiple OpenCL platforms/devices
 
-# Requirements 
-
-* SDL2, SDL2_TTF libraries
-* OpenCL library
-
-# Implemented fractals
-
-* julia z^2+c
-![julia](julia.png)
-
-* julia z^3+c
-![julia3](julia3.png)
-
-* mandelbrot z^2+c
-![mandelbrot](mandelbrot.png)
-
-* dragon
-![dragon](dragon.png)
-
 # Tested OpenCL implementations
 
 * Neo - Intel Graphics Compute Runtime for OpenCL: https://github.com/intel/compute-runtime
@@ -41,22 +24,11 @@ Discover and explore fractals world with OpenCL acceleration.
 * Nvidia OpenCL 1.2 CUDA - The NVIDIA Accelerated Graphics Driver Set for Linux-x86_64: http://www.nvidia.com
 * Portable Computing Language: http://pocl.sourceforge.net
 
-# Build instruction
-
-* Run configure script to configure project
-* Run make to build project
-* To disable fp64 support modify configure script
-
-# Run instruction
-
-* Execute FractalCL application in build directory. Use mouse and keyboard to change fractals parameters.
-* Press ESC key to exit application.
-
 # Mouse usage
 
 * left button - increase zoom
 * right button - decrease zoom
-* middle button - stop animation
+* middle button - stop animations
 
 # Keyboard usage
 
@@ -83,4 +55,34 @@ Discover and explore fractals world with OpenCL acceleration.
 * 1 - show calculated complex number
 * 2 - multiply gws (global workgroup size) by 2
 * 3 - divide gws (global workgroup size) by 2
+
+# Implemented fractals
+
+* julia z^2+c
+![julia](julia.png)
+
+* julia z^3+c
+![julia3](julia3.png)
+
+* mandelbrot z^2+c
+![mandelbrot](mandelbrot.png)
+
+* dragon
+![dragon](dragon.png)
+
+# Requirements 
+
+* SDL2, SDL2_TTF libraries
+* OpenCL library
+
+# Build instruction
+
+* Run configure script to configure project
+* Run make to build project
+* To disable fp64 support modify configure script
+
+# Run instruction
+
+* Execute FractalCL application in build directory. Use mouse and keyboard to change fractals parameters.
+* Press ESC key to exit application.
 

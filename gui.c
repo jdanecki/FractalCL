@@ -53,7 +53,7 @@ void write_text(const char* t, int x, int y)
 
     shade_color.r = 0;
     shade_color.g = 0;
-    shade_color.b = 0;
+    shade_color.b = 60;
 
     temp = TTF_RenderUTF8_Shaded(font, t, text_color, shade_color);
 
@@ -80,16 +80,63 @@ int init_window()
     SDL_Window* app_window;
     if (SDL_Init(SDL_INIT_VIDEO) < 0) return 1;
 #ifdef SDL_ACCELERATED
-    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED | SDL_WINDOW_OPENGL, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED | SDL_WINDOW_OPENGL, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, HEIGHT, 0);
     main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_ACCELERATED);
 #else
-    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, HEIGHT, 0);
     main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_SOFTWARE);
 #endif
 
     texture = SDL_CreateTexture(main_window, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
     init_font();
+    draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
     return 0;
+}
+
+void draw_box(int x, int y, int w, int h, int r, int g, int b)
+{
+    SDL_Rect dst;
+    dst.w = w;
+    dst.h = h;
+    dst.x = x;
+    dst.y = y;
+    SDL_SetRenderDrawColor(main_window, r, g, b, 255);
+    SDL_RenderFillRect(main_window, &dst);
+}
+
+void draw_double(int y, char* txt, double val)
+{
+    char buf[256];
+    sprintf(buf, "%s=%f", txt, val);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
+}
+
+void draw_int(int y, char* txt, int val)
+{
+    char buf[256];
+    sprintf(buf, "%s=%d", txt, val);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
+}
+
+void draw_long(int y, char* txt, unsigned long val)
+{
+    char buf[256];
+    sprintf(buf, "%s=%lu", txt, val);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
+}
+
+void draw_hex(int y, char* txt, int val)
+{
+    char buf[256];
+    sprintf(buf, "%s=%x", txt, val);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
+}
+
+void draw_string(int y, char* txt, char* val)
+{
+    char buf[256];
+    sprintf(buf, "%s=%s", txt, val);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 
 unsigned long get_time_usec()
