@@ -120,6 +120,7 @@ struct ocl_device
     unsigned long execution;
     int intel;
     int fp64;
+    int pocl;
 };
 
 extern struct ocl_device* ocl_devices;

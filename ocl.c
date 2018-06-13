@@ -33,6 +33,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     cl_context_properties prop[3];
 
     if (!strncmp(plat_name, "Intel", 5)) dev->intel = 1;
+    if (!strncmp(plat_name, "Portable", 8)) dev->pocl = 1;
 
     err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0, NULL, &num);
     if ((err != CL_SUCCESS) || (num != 1))
@@ -143,16 +144,18 @@ int create_kernel(struct ocl_device* dev, struct ocl_fractal* fractal, cl_kernel
         printf("%s: PREFERRED_WORK_GROUP_SIZE_MULTIPLE=%lu\n", name, param1);
         if (dev->intel) printf("threads=%lu\n", param1 * 7 * dev->eu);
     }
-    err = clGetKernelWorkGroupInfo(*kernel, dev->device_id, CL_KERNEL_PRIVATE_MEM_SIZE, sizeof(cl_ulong), &param2, NULL);
-    if (err != CL_SUCCESS)
+    if (!dev->pocl)
     {
-        printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name, err);
+        err = clGetKernelWorkGroupInfo(*kernel, dev->device_id, CL_KERNEL_PRIVATE_MEM_SIZE, sizeof(cl_ulong), &param2, NULL);
+        if (err != CL_SUCCESS)
+        {
+            printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name, err);
+        }
+        else
+        {
+            printf("%s: PRIVATE_MEM=%lu\n", name, param2);
+        }
     }
-    else
-    {
-        printf("%s: PRIVATE_MEM=%lu\n", name, param2);
-    }
-
     return 0;
 }
 
