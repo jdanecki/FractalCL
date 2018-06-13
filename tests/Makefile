@@ -15,13 +15,12 @@
 
 OPENCL_LIB=$(shell pkg-config --libs OpenCL)
 INCLUDE=../include
-FP_64_SUPPORT=0
-CFLAGS="-march=native -mtune=native -g -Wall -Wno-deprecated-declarations" 
+FP_64_SUPPORT=1
+CFLAGS=-g -Wall -Wno-deprecated-declarations -I$(INCLUDE) 
 
 ifeq ($(FP_64_SUPPORT), 1)
-CFLAGS="$(CFLAGS) -DFP_64_SUPPORT=1"
+CFLAGS+=-DFP_64_SUPPORT=1
 endif
 
 test_ocl: ../ocl.c test_ocl.c Makefile
-	gcc -g -Wall -o $@ test_ocl.c ../ocl.c -I$(INCLUDE) ${OPENCL_LIB} -lm -lrt -lpthread -ldl -Wno-deprecated-declarations
-
+	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl 

@@ -81,13 +81,13 @@ struct kernel_args
 struct ocl_fractal
 {
     char* name;
-    enum fractals id;
     char* source;
     int fd;
     size_t filesize;
 };
 
 extern struct ocl_fractal fractals[NR_FRACTALS];
+extern struct ocl_fractal test_fractal;
 
 struct ocl_thread
 {
@@ -100,13 +100,15 @@ struct ocl_thread
 
 struct ocl_device
 {
-    cl_device_id gpu;
+    cl_device_id device_id;
+    cl_device_type type;
     cl_command_queue queue;
-    cl_platform_id id;
+    cl_platform_id platform_id;
     cl_context ctx;
     int initialized;
     cl_program program;
     cl_kernel kernels[NR_FRACTALS];
+    cl_kernel test_kernel;
     struct kernel_args args[NR_FRACTALS];
     cl_event event;
     char name[100];
@@ -117,6 +119,7 @@ struct ocl_device
     cl_mem cl_pixels;
     unsigned long execution;
     int intel;
+    int fp64;
 };
 
 extern struct ocl_device* ocl_devices;

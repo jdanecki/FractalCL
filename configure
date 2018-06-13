@@ -1,12 +1,16 @@
 #!/bin/bash
 
-#by default fp64 extention is disabled
-#FP_64_SUPPORT=ON
-FP_64_SUPPORT=OFF
+#support for fp64 extention is enabled by default
+#float will be used if device doesn't support cl_khr_fp64
+FP_64_SUPPORT=ON
+
+#support for fp64 can be disabled
+#float will be used even device supports cl_khr_fp64
+#FP_64_SUPPORT=OFF
 
 mkdir -p build
 cd build
-cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} .. 
+cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} ..
 
 ln -sf ../kernels/*.cl .
 ln -sf ../*.ttf .

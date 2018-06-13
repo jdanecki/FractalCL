@@ -19,17 +19,31 @@
 
 int finish_thread;
 volatile int tasks_finished;
-enum fractals fractal = JULIA;
 
-int execute_fractal(struct ocl_device* dev, enum fractals fractal)
+int execute_fractal(struct ocl_device* dev)
 {
-    char* name = fractals[fractal].name;
+    char* name = test_fractal.name;
+    cl_kernel kernel = dev->test_kernel;
+    size_t gws[2];
+    size_t ofs[2] = {0, 0};
+    int err;
 
-    printf("execute fractal %s on %s\n", name, dev->name);
+    gws[0] = 1;
+    gws[1] = 1;
+
+    printf("execute fractal [%s] on %s\n", name, dev->name);
+    err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name, err);
+        return 1;
+    }
+    clFinish(dev->queue);
+
     return 0;
 }
 
-void* gpu_kernel(void* d)
+void* ocl_kernel(void* d)
 {
     struct ocl_device* dev = (struct ocl_device*)d;
     struct ocl_thread* t = &dev->thread;
@@ -42,7 +56,7 @@ void* gpu_kernel(void* d)
         {
             if (finish_thread)
             {
-                printf("thread exits\n");
+                printf("thread exits for %s\n", dev->name);
                 return NULL;
             }
             pthread_cond_wait(&t->cond, &t->lock);
@@ -50,9 +64,9 @@ void* gpu_kernel(void* d)
         t->work = 0;
         pthread_mutex_unlock(&t->lock);
 
-        printf("gpu kernel for %s tid=%lx\n", dev->name, dev->thread.tid);
+        printf("ocl kernel for %s tid=%lx\n", dev->name, dev->thread.tid);
 
-        err = execute_fractal(dev, fractal);
+        err = execute_fractal(dev);
 
         if (err)
         {
@@ -63,21 +77,21 @@ void* gpu_kernel(void* d)
 
         tasks_finished++;
     }
-    printf("thread done\n");
+    printf("thread done for %s\n", dev->name);
     sleep(1);
     return NULL;
 }
 
 int signal_device(struct ocl_device* dev)
 {
-    if (!dev->initialized) return 0;
-    if (dev->thread.finished) return 0;
+    if (!dev->initialized) return 1;
+    if (dev->thread.finished) return 1;
 
     pthread_mutex_lock(&dev->thread.lock);
     dev->thread.work = 1;
     pthread_cond_signal(&dev->thread.cond);
     pthread_mutex_unlock(&dev->thread.lock);
-    return 1;
+    return 0;
 }
 
 int prepare_thread(struct ocl_device* dev)
@@ -87,7 +101,7 @@ int prepare_thread(struct ocl_device* dev)
     dev->thread.work = 0;
     if (pthread_mutex_init(&dev->thread.lock, NULL)) return 1;
     if (pthread_cond_init(&dev->thread.cond, NULL)) return 1;
-    pthread_create(&dev->thread.tid, NULL, gpu_kernel, dev);
+    pthread_create(&dev->thread.tid, NULL, ocl_kernel, dev);
     return 0;
 }
 
@@ -100,11 +114,15 @@ int main()
     for (i = 0; i < nr_devices; i++)
     {
         if (prepare_thread(&ocl_devices[i])) return 1;
-        if (signal_device(&ocl_devices[i])) return 1;
     }
 
-    sleep(2);
+    for (i = 0; i < nr_devices; i++)
+    {
+        if (signal_device(&ocl_devices[i])) return 1;
+        sleep(1);
+    }
 
+    printf("finishing test\n");
     finish_thread = 1;
 
     ret += close_ocl();

@@ -1,17 +1,16 @@
-#ifdef HOST_APP
-void dragon(int px, int py, uint* pixels, unsigned int* colors, int mm,
-            FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-            FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x,
-            FP_TYPE c_y)
-#else
 #ifdef FP_64_SUPPORT
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#define FP_TYPE double
+#else
+#define FP_TYPE float
 #endif
 
-__kernel void dragon(__global uint* pixels, __global unsigned int* colors,
-                     int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty,
-                     FP_TYPE step_y, FP_TYPE er, int max_iter, int pal,
-                     int show_z, FP_TYPE c_x, FP_TYPE c_y)
+#ifdef HOST_APP
+void dragon(int px, int py, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+            int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+#else
+
+__kernel void dragon(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
+                     FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #endif
 {
 #ifndef HOST_APP
@@ -47,8 +46,7 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors,
             yc = y1;
             x = (ofs_lx + x1) * mm;
             y = (ofs_ty + y1) * mm;
-            if (x < WIDTH / 2 && y < HEIGHT / 2 && x > -WIDTH / 2 &&
-                y > -HEIGHT / 2)
+            if (x < WIDTH / 2 && y < HEIGHT / 2 && x > -WIDTH / 2 && y > -HEIGHT / 2)
             {
                 pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r;
             }

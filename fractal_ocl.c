@@ -43,7 +43,7 @@ pthread_mutex_t lock_fin;
 FP_TYPE zx = 1.0, zy = 1.0;   // zoom x, y
 FP_TYPE dx, dy;               // shift left/right, down/up
 FP_TYPE szx = 1.0, szy = 1.0; // scale x and y
-FP_TYPE mx, my; // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
+FP_TYPE mx, my;               // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
 
 int mm = 16;
 
@@ -161,9 +161,7 @@ int prepare_pixels(struct ocl_device* dev)
     void* pixels;
 
     err = posix_memalign((void**)&pixels, 4096, IMAGE_SIZE);
-    dev->cl_pixels =
-        clCreateBuffer(dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                       IMAGE_SIZE, pixels, &err);
+    dev->cl_pixels = clCreateBuffer(dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, IMAGE_SIZE, pixels, &err);
 
     if (err != CL_SUCCESS)
     {
@@ -247,8 +245,7 @@ int prepare_colors(struct ocl_device* dev)
         colors[0] = 0;
         colors[360] = 0;
     }
-    dev->cl_colors = clCreateBuffer(
-        dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, colors, &err);
+    dev->cl_colors = clCreateBuffer(dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, colors, &err);
     if (err != CL_SUCCESS)
     {
         printf("%s clCreateBuffer colors returned %d\n", dev->name, err);
@@ -267,8 +264,7 @@ int set_kernel_arg(cl_kernel kernel, char* name, int i, int size, void* arg)
     err = clSetKernelArg(kernel, i, size, arg);
     if (err != CL_SUCCESS)
     {
-        printf("set_kernel_arg for: %s(i=%d size=%d) returned %d\n", name, i,
-               size, err);
+        printf("set_kernel_arg for: %s(i=%d size=%d) returned %d\n", name, i, size, err);
         return 1;
     }
     return 0;
@@ -283,6 +279,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     struct kernel_args* args = &dev->args[fractal];
     int err;
     unsigned long tp1, tp2;
+    int fp_size = dev->fp64 ? sizeof(double) : sizeof(float);
 
     args->ofs_lx = ofs_lx;
     args->ofs_rx = ofs_rx;
@@ -293,6 +290,9 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     FP_TYPE ofs_rx1 = (args->ofs_rx + dx) / szx;
     FP_TYPE ofs_ty1 = (args->ofs_ty + dy) / szy;
     FP_TYPE ofs_by1 = (args->ofs_by + dy) / szy;
+    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;
@@ -315,49 +315,62 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     gws[0] = gws_x;
     gws[1] = gws_y;
 
-    if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels))
-        return 1;
-    if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors))
-        return 1;
+    if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels)) return 1;
+    if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors)) return 1;
     if (set_kernel_arg(kernel, name, 2, sizeof(cl_int), &mm)) return 1;
-    if (set_kernel_arg(kernel, name, 3, sizeof(FP_TYPE), &ofs_lx1)) return 1;
-    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
-    if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &step_x)) return 1;
-    //	if (set_kernel_arg(kernel, name, 4, sizeof(FP_TYPE), &ofs_rx1)) return
-    // 1;
+    if (dev->fp64)
+    {
+        if (set_kernel_arg(kernel, name, 3, fp_size, &ofs_lx1)) return 1;
+        if (set_kernel_arg(kernel, name, 4, fp_size, &step_x)) return 1;
+        if (set_kernel_arg(kernel, name, 5, fp_size, &ofs_ty1)) return 1;
+        if (set_kernel_arg(kernel, name, 6, fp_size, &step_y)) return 1;
+        if (set_kernel_arg(kernel, name, 7, fp_size, &args->er)) return 1;
+    }
+    else
+    {
+        float fofs_lx1 = (float)ofs_lx1;
+        float fofs_ty1 = (float)ofs_ty1;
 
-    if (set_kernel_arg(kernel, name, 5, sizeof(FP_TYPE), &ofs_ty1)) return 1;
-    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
-    if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &step_y)) return 1;
-    //	if (set_kernel_arg(kernel, name, 6, sizeof(FP_TYPE), &ofs_by1)) return
-    // 1;
+        float fstep_x = (float)step_x;
+        float fstep_y = (float)step_y;
 
-    if (set_kernel_arg(kernel, name, 7, sizeof(FP_TYPE), &args->er)) return 1;
+        float fer = (float)args->er;
+
+        if (set_kernel_arg(kernel, name, 3, fp_size, &fofs_lx1)) return 1;
+        if (set_kernel_arg(kernel, name, 4, fp_size, &fstep_x)) return 1;
+        if (set_kernel_arg(kernel, name, 5, fp_size, &fofs_ty1)) return 1;
+        if (set_kernel_arg(kernel, name, 6, fp_size, &fstep_y)) return 1;
+        if (set_kernel_arg(kernel, name, 7, fp_size, &fer)) return 1;
+    }
     if (set_kernel_arg(kernel, name, 8, sizeof(int), &args->max_iter)) return 1;
     if (set_kernel_arg(kernel, name, 9, sizeof(int), &args->pal)) return 1;
     if (set_kernel_arg(kernel, name, 10, sizeof(int), &args->show_z)) return 1;
-    if (fractal == JULIA || fractal == JULIA_FULL || fractal == DRAGON ||
-        fractal == JULIA3)
+    if (fractal == JULIA || fractal == JULIA_FULL || fractal == DRAGON || fractal == JULIA3)
     {
-        if (set_kernel_arg(kernel, name, 11, sizeof(FP_TYPE), &args->c_x))
-            return 1;
-        if (set_kernel_arg(kernel, name, 12, sizeof(FP_TYPE), &args->c_y))
-            return 1;
+        if (dev->fp64)
+        {
+            if (set_kernel_arg(kernel, name, 11, fp_size, &args->c_x)) return 1;
+            if (set_kernel_arg(kernel, name, 12, fp_size, &args->c_y)) return 1;
+        }
+        else
+        {
+            float fc_x = (float)args->c_x;
+            float fc_y = (float)args->c_y;
+
+            if (set_kernel_arg(kernel, name, 11, fp_size, &fc_x)) return 1;
+            if (set_kernel_arg(kernel, name, 12, fp_size, &fc_y)) return 1;
+        }
 
         if (fractal == JULIA || fractal == JULIA3)
         {
-            if (set_kernel_arg(kernel, name, 13, sizeof(int), &args->ofs_x))
-                return 1;
-            if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y))
-                return 1;
+            if (set_kernel_arg(kernel, name, 13, sizeof(int), &args->ofs_x)) return 1;
+            if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y)) return 1;
         }
     }
     if (fractal == MANDELBROT)
     {
-        if (set_kernel_arg(kernel, name, 11, sizeof(int), &args->ofs_x))
-            return 1;
-        if (set_kernel_arg(kernel, name, 12, sizeof(int), &args->ofs_y))
-            return 1;
+        if (set_kernel_arg(kernel, name, 11, sizeof(int), &args->ofs_x)) return 1;
+        if (set_kernel_arg(kernel, name, 12, sizeof(int), &args->ofs_y)) return 1;
     }
 
     // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
@@ -367,12 +380,10 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
 
     tp1 = get_time_usec();
 
-    err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL,
-                                 NULL);
+    err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name,
-               err);
+        printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name, err);
         return 1;
     }
     // clFlush(dev->queue);
@@ -387,7 +398,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     return 0;
 }
 
-void* gpu_kernel(void* d)
+void* ocl_kernel(void* d)
 {
     struct ocl_device* dev = (struct ocl_device*)d;
     struct ocl_thread* t = &dev->thread;
@@ -409,7 +420,7 @@ void* gpu_kernel(void* d)
         t->work = 0;
         pthread_mutex_unlock(&t->lock);
 
-        //        printf("gpu kernel for %s tid=%lx\n", dev->name,
+        //        printf("ocl kernel for %s tid=%lx\n", dev->name,
         //        dev->thread.tid);
 
         err = execute_fractal(dev, fractal);
@@ -476,24 +487,19 @@ void* execute_fractal_cpu(void* c)
             switch (fractal)
             {
             case JULIA:
-                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4,
-                      main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty,
-                      step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
+                      show_z, c_x, c_y);
                 break;
             case JULIA3:
-                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4,
-                       main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty,
-                       step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
+                       show_z, c_x, c_y);
                 break;
             case JULIA_FULL:
-                julia_full(x, y, main_window->pixels, colors, mm, ofs_lx,
-                           step_x, ofs_ty, step_y, er, max_iter, pal, show_z,
-                           c_x, c_y);
+                julia_full(x, y, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
                 break;
             case MANDELBROT:
-                mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4,
-                           main_window->pixels, colors, mm, ofs_lx, step_x,
-                           ofs_ty, step_y, er, max_iter, pal, show_z);
+                mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, main_window->pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal,
+                           show_z);
                 break;
             default:
                 return NULL;
@@ -526,31 +532,29 @@ void start_cpu()
     if (fractal == DRAGON)
     {
         memset(main_window->pixels, 0, IMAGE_SIZE);
-        dragon(0, 0, main_window->pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er,
-               max_iter, pal, show_z, c_x, c_y);
+        dragon(0, 0, main_window->pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er, max_iter, pal, show_z, c_x, c_y);
     }
     else
     {
-        struct cpu_args t_args[16] = {
-            {0, gws_x / 4, 0, gws_y / 4, ofs_x, ofs_y},
-            {gws_x / 4, gws_x / 2, 0, gws_y / 4, ofs_x, ofs_y},
-            {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4, ofs_x, ofs_y},
-            {gws_x * 3 / 4, gws_x, 0, gws_y / 4, ofs_x, ofs_y},
+        struct cpu_args t_args[16] = {{0, gws_x / 4, 0, gws_y / 4, ofs_x, ofs_y},
+                                      {gws_x / 4, gws_x / 2, 0, gws_y / 4, ofs_x, ofs_y},
+                                      {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4, ofs_x, ofs_y},
+                                      {gws_x * 3 / 4, gws_x, 0, gws_y / 4, ofs_x, ofs_y},
 
-            {0, gws_x / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-            {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-            {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-            {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+                                      {0, gws_x / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+                                      {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+                                      {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
 
-            {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-            {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-            {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-            {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+                                      {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+                                      {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+                                      {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
 
-            {0, gws_x / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-            {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-            {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-            {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y, ofs_x, ofs_y}};
+                                      {0, gws_x / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+                                      {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
+                                      {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y, ofs_x, ofs_y}};
 
         pthread_t tid[16];
         for (t = 0; t < 16; t++)
@@ -571,7 +575,7 @@ void start_ocl()
     int err;
     if (!nr_devices) return;
 
-    if (!signal_device(&ocl_devices[current_device]) == 0)
+    if (signal_device(&ocl_devices[current_device]))
     {
         printf("can't signal device\n");
         return;
@@ -591,10 +595,8 @@ void start_ocl()
     {
         void* px1;
 
-        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue,
-                                 ocl_devices[current_device].cl_pixels, CL_TRUE,
-                                 CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0,
-                                 NULL, NULL, &err);
+        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0,
+                                 IMAGE_SIZE, 0, NULL, NULL, &err);
         if (err != CL_SUCCESS)
         {
             printf("clEnqueueMapBuffer error %d\n", err);
@@ -603,9 +605,7 @@ void start_ocl()
         {
             memcpy(main_window->pixels, px1, IMAGE_SIZE);
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);
-            clEnqueueUnmapMemObject(ocl_devices[current_device].queue,
-                                    ocl_devices[current_device].cl_pixels, px1,
-                                    0, NULL, NULL);
+            clEnqueueUnmapMemObject(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, px1, 0, NULL, NULL);
         }
     }
 }
@@ -617,7 +617,7 @@ int prepare_thread(struct ocl_device* dev)
     dev->thread.work = 0;
     if (pthread_mutex_init(&dev->thread.lock, NULL)) return 1;
     if (pthread_cond_init(&dev->thread.cond, NULL)) return 1;
-    pthread_create(&dev->thread.tid, NULL, gpu_kernel, dev);
+    pthread_create(&dev->thread.tid, NULL, ocl_kernel, dev);
     return 0;
 }
 
@@ -681,7 +681,8 @@ void run_program()
             ofs_ty = (ofs_ty - my) * zy + my;
             ofs_by = (ofs_by - my) * zy + my;
 
-            if (ofs_lx < -10 || ofs_rx > 10 || ofs_ty > 10 || ofs_by < -10)
+            if (ofs_lx < -10 || ofs_rx > 10 || ofs_ty > 10 || ofs_by < -10 ||
+                ((OFS_RX - OFS_LX) / (ofs_rx - ofs_lx) > (ocl_devices[current_device].fp64 ? 43000000000000 : 300000)))
             {
                 dx = 0;
                 dy = 0;
@@ -703,19 +704,16 @@ void run_program()
                 frame_time += draw_one_frame();
             }
 
-            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f",
-                    max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
+            sprintf(status_line, "iter=%d er=%f cx=%f cy=%f %s mm=0x%x zoom=%f", max_iter, er, c_x, c_y, (pal) ? "RGB" : "HSV", mm,
                     (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
             write_text(status_line, 0, 0);
-            sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y,
-                    frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
-                    cur_dev ? ocl_devices[current_device].execution
-                            : cpu_execution);
+            sprintf(status_line, "gws=[%d,%d] time=%lu %s=%lu", gws_x, gws_y, frame_time / draw_frames, cur_dev ? "OCL" : "CPU",
+                    cur_dev ? ocl_devices[current_device].execution : cpu_execution);
             write_text(status_line, WIDTH / 2, HEIGHT - FONT_SIZE);
             if (cur_dev)
             {
-                sprintf(status_line, "OCL[%d/%d]: %s", current_device,
-                        nr_devices, ocl_devices[current_device].name);
+                sprintf(status_line, "OCL[%d/%d]: %s %s", current_device + 1, nr_devices, ocl_devices[current_device].name,
+                        ocl_devices[current_device].fp64 ? "fp64" : "fp32");
                 write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
             }
             draw_frames = 1;
@@ -912,11 +910,8 @@ void run_program()
                         void* px1;
                         int err;
 
-                        px1 = clEnqueueMapBuffer(
-                            ocl_devices[current_device].queue,
-                            ocl_devices[current_device].cl_pixels, CL_TRUE,
-                            CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL,
-                            NULL, &err);
+                        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE,
+                                                 CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE, 0, NULL, NULL, &err);
                         if (err != CL_SUCCESS)
                         {
                             printf("clEnqueueMapBuffer "
@@ -926,10 +921,7 @@ void run_program()
                         else
                         {
                             memset(px1, 0, IMAGE_SIZE);
-                            clEnqueueUnmapMemObject(
-                                ocl_devices[current_device].queue,
-                                ocl_devices[current_device].cl_pixels, px1, 0,
-                                NULL, NULL);
+                            clEnqueueUnmapMemObject(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, px1, 0, NULL, NULL);
                         }
                     }
                     break;
@@ -976,8 +968,7 @@ void run_program()
                 }
 
                 mx = equation(event.button.x, 0, ofs_lx, WIDTH, ofs_rx);
-                my = equation(event.button.y % (HEIGHT), 0, ofs_ty, HEIGHT,
-                              ofs_by);
+                my = equation(event.button.y % (HEIGHT), 0, ofs_ty, HEIGHT, ofs_by);
 
                 if (event.button.button == 3)
                 {

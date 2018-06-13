@@ -21,6 +21,7 @@ volatile int nr_devices;
 struct ocl_device* ocl_devices;
 int current_device;
 struct ocl_fractal fractals[NR_FRACTALS];
+struct ocl_fractal test_fractal;
 
 int create_ocl_device(int di, char* plat_name, cl_platform_id id)
 {
@@ -28,7 +29,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     unsigned int num;
     struct ocl_device* dev = &ocl_devices[di];
     size_t size;
-    char name[256];
+    char device_info[4096];
     cl_context_properties prop[3];
 
     if (!strncmp(plat_name, "Intel", 5)) dev->intel = 1;
@@ -40,29 +41,66 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
         return 1;
     }
 
-    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 1, &dev->gpu, NULL);
-    err = clGetDeviceInfo(dev->gpu, CL_DEVICE_NAME, 0, NULL, &size);
-    if (size > 255) return 1;
-    err = clGetDeviceInfo(dev->gpu, CL_DEVICE_NAME, size, name, NULL);
-    printf("GPU device: %s\n", name);
-    memcpy(dev->name, name, size);
+    err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 1, &dev->device_id, NULL);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, 0, NULL, &size);
+    if (size > 4095) return 1;
 
-    err = clGetDeviceInfo(dev->gpu, CL_DEVICE_MAX_COMPUTE_UNITS,
-                          sizeof(cl_uint), &dev->eu, NULL);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, size, device_info, NULL);
+    printf("OCL device: %s\n", device_info);
+    memcpy(dev->name, device_info, size);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, size, device_info, NULL);
+    printf("OCL device vendor: %s\n", device_info);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, size, device_info, NULL);
+    printf("OCL device version: %s\n", device_info);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, size, device_info, NULL);
+    printf("OCL driver version: %s\n", device_info);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, size, device_info, NULL);
+    printf("OCL C version: %s\n", device_info);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, size, device_info, NULL);
+    printf("OCL device extensions: %s\n", device_info);
+    if (strstr(device_info, "cl_khr_fp64"))
+    {
+#ifdef FP_64_SUPPORT
+        printf("cl_khr_fp64 supported by device, and enabled in project configuration\n");
+        dev->fp64 = 1;
+#else
+        printf("!!! cl_khr_fp64 supported by device, but disabled in project configuration !!!\n");
+        printf("!!! enable it in configure script !!! \n");
+#endif
+    }
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, 0, NULL, &size);
+    if (size > 4095) return 1;
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, size, &dev->type, NULL);
+    printf("OCL device type: %ld\n", dev->type);
+
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &dev->eu, NULL);
     if (err != CL_SUCCESS)
     {
-        printf("clGetDeviceInfo CL_DEVICE_MAX_COMPUTE_UNITS returned %d\n",
-               err);
+        printf("clGetDeviceInfo CL_DEVICE_MAX_COMPUTE_UNITS returned %d\n", err);
         return 1;
     }
     printf("MAX_COMPUTE_UNITS=%u\n", dev->eu);
 
-    err = clGetDeviceInfo(dev->gpu, CL_DEVICE_MAX_WORK_GROUP_SIZE,
-                          sizeof(size_t), &dev->wgs, NULL);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &dev->wgs, NULL);
     if (err != CL_SUCCESS)
     {
-        printf("clGetDeviceInfo CL_DEVICE_MAX_WORK_GROUP_SIZE returned %d\n",
-               err);
+        printf("clGetDeviceInfo CL_DEVICE_MAX_WORK_GROUP_SIZE returned %d\n", err);
         return 1;
     }
     printf("MAX_WORKGROUP_SIZE=%lu\n", dev->wgs);
@@ -70,54 +108,51 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     prop[0] = CL_CONTEXT_PLATFORM;
     prop[1] = (cl_context_properties)id;
     prop[2] = 0;
-    dev->ctx = clCreateContext(prop, 1, &dev->gpu, NULL, NULL, &err);
+    dev->ctx = clCreateContext(prop, 1, &dev->device_id, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
         printf("clCreateContext returned %d\n", err);
         return 1;
     }
-    dev->id = id;
+    dev->platform_id = id;
     dev->initialized = 1;
     return 0;
 }
 
-int create_kernel(struct ocl_device* dev, enum fractals fractal)
+int create_kernel(struct ocl_device* dev, struct ocl_fractal* fractal, cl_kernel* kernel)
 {
     int err;
     size_t param1;
     cl_ulong param2;
-    char* name = fractals[fractal].name;
+    char* name = fractal->name;
 
-    dev->kernels[fractal] = clCreateKernel(dev->program, name, &err);
+    *kernel = clCreateKernel(dev->program, name, &err);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clCreateKernel %s returned %d\n", dev->name, name, err);
+        printf("%s: clCreateKernel [%s] returned %d\n", dev->name, name, err);
         return 1;
     }
 
-    err = clGetKernelWorkGroupInfo(dev->kernels[fractal], dev->gpu,
-                                   CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-                                   sizeof(size_t), &param1, NULL);
+    err = clGetKernelWorkGroupInfo(*kernel, dev->device_id, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(size_t), &param1, NULL);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name,
-               err);
-        return 1;
+        printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name, err);
     }
-    err = clGetKernelWorkGroupInfo(dev->kernels[fractal], dev->gpu,
-                                   CL_KERNEL_PRIVATE_MEM_SIZE, sizeof(cl_ulong),
-                                   &param2, NULL);
-
+    else
+    {
+        printf("%s: PREFERRED_WORK_GROUP_SIZE_MULTIPLE=%lu\n", name, param1);
+        if (dev->intel) printf("threads=%lu\n", param1 * 7 * dev->eu);
+    }
+    err = clGetKernelWorkGroupInfo(*kernel, dev->device_id, CL_KERNEL_PRIVATE_MEM_SIZE, sizeof(cl_ulong), &param2, NULL);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name,
-               err);
-        return 1;
+        printf("%s: clGetKernelWorkGroupInfo %s returned %d\n", dev->name, name, err);
+    }
+    else
+    {
+        printf("%s: PRIVATE_MEM=%lu\n", name, param2);
     }
 
-    printf("%s: PREFERRED_WORK_GROUP_SIZE_MULTIPLE=%lu max_threads=%lu "
-           "PRIVATE_MEM=%lu\n",
-           name, param1, param1 * 7 * dev->eu, param2);
     return 0;
 }
 
@@ -127,9 +162,9 @@ int create_kernels(struct ocl_device* dev, char* options)
     size_t size;
     char* log;
 
-    char* sources[NR_FRACTALS];
+    char* sources[NR_FRACTALS + 1];
     char cl_options[1024];
-    size_t filesizes[NR_FRACTALS];
+    size_t filesizes[NR_FRACTALS + 1];
     if (!dev->initialized) return 0;
 
     printf("prepare kernels for %s\n", dev->name);
@@ -139,30 +174,26 @@ int create_kernels(struct ocl_device* dev, char* options)
         sources[i] = fractals[i].source;
         filesizes[i] = fractals[i].filesize;
     }
+    sources[i] = test_fractal.source;
+    filesizes[i] = test_fractal.filesize;
+
     sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
-                        "WIDTH=%d -D BPP=%d -D PITCH=%d -D FP_TYPE=%s",
-            options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP,
-            PITCH, STRING_MACRO(FP_TYPE));
-#ifdef FP_64_SUPPORT
-    strcat(cl_options, " -DFP_64_SUPPORT=1");
-#endif
-    dev->program = clCreateProgramWithSource(
-        dev->ctx, NR_FRACTALS, (const char**)sources, filesizes, &err);
+                        "WIDTH=%d -D BPP=%d -D PITCH=%d %s",
+            options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "");
+    dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 1, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)
     {
         printf("%s: clCreateProgramWithSource returned %d\n", dev->name, err);
         return 1;
     }
     printf("compiling kernels with %s\n", cl_options);
-    err = clBuildProgram(dev->program, 1, &dev->gpu, cl_options, NULL, NULL);
+    err = clBuildProgram(dev->program, 1, &dev->device_id, cl_options, NULL, NULL);
     printf("%s: clBuildProgram returned %d\n", dev->name, err);
 
     printf("%s: ------ compilation log  -----------\n", dev->name);
-    clGetProgramBuildInfo(dev->program, dev->gpu, CL_PROGRAM_BUILD_LOG, 0, NULL,
-                          &size);
+    clGetProgramBuildInfo(dev->program, dev->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &size);
     log = calloc(1, size);
-    clGetProgramBuildInfo(dev->program, dev->gpu, CL_PROGRAM_BUILD_LOG, size,
-                          log, NULL);
+    clGetProgramBuildInfo(dev->program, dev->device_id, CL_PROGRAM_BUILD_LOG, size, log, NULL);
     printf("%s\n", log);
     free(log);
 
@@ -171,46 +202,45 @@ int create_kernels(struct ocl_device* dev, char* options)
         return 1;
     }
 
-    dev->queue = clCreateCommandQueue(dev->ctx, dev->gpu, 0, &err);
+    dev->queue = clCreateCommandQueue(dev->ctx, dev->device_id, 0, &err);
     if (err != CL_SUCCESS)
     {
         printf("%s: clCreateCommandQueue on GPU returned %d\n", dev->name, err);
         return 1;
     }
 
-    if (create_kernel(dev, JULIA)) return 1;
-    if (create_kernel(dev, MANDELBROT)) return 1;
-    if (create_kernel(dev, JULIA_FULL)) return 1;
-    if (create_kernel(dev, DRAGON)) return 1;
-    if (create_kernel(dev, JULIA3)) return 1;
+    if (create_kernel(dev, &fractals[JULIA], &dev->kernels[JULIA])) return 1;
+    if (create_kernel(dev, &fractals[MANDELBROT], &dev->kernels[MANDELBROT])) return 1;
+    if (create_kernel(dev, &fractals[JULIA_FULL], &dev->kernels[JULIA_FULL])) return 1;
+    if (create_kernel(dev, &fractals[DRAGON], &dev->kernels[DRAGON])) return 1;
+    if (create_kernel(dev, &fractals[JULIA3], &dev->kernels[JULIA3])) return 1;
+    if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
+
     printf("------------------------------------------\n");
     return 0;
 }
 
-void open_fractal(enum fractals fractal, char* name)
+void open_fractal(struct ocl_fractal* fractal, char* name)
 {
     struct stat fileinfo;
     char filename[80];
 
-    fractals[fractal].name = name;
-    fractals[fractal].id = fractal;
+    fractal->name = name;
 
     sprintf(filename, "%s.cl", name);
     stat(filename, &fileinfo);
-    fractals[fractal].filesize = fileinfo.st_size;
-    fractals[fractal].fd = open(filename, O_RDONLY);
-    if (fractals[fractal].fd == -1) printf("open: %s\n", strerror(errno));
+    fractal->filesize = fileinfo.st_size;
+    fractal->fd = open(filename, O_RDONLY);
+    if (fractal->fd == -1) printf("open: %s\n", strerror(errno));
 
-    fractals[fractal].source = mmap(NULL, fractals[fractal].filesize, PROT_READ,
-                                    MAP_PRIVATE, fractals[fractal].fd, 0);
-    if (fractals[fractal].source == MAP_FAILED)
-        printf("mmap: %s\n", strerror(errno));
+    fractal->source = mmap(NULL, fractal->filesize, PROT_READ, MAP_PRIVATE, fractal->fd, 0);
+    if (fractal->source == MAP_FAILED) printf("mmap: %s\n", strerror(errno));
 }
 
-void close_fractal(enum fractals fractal)
+void close_fractal(struct ocl_fractal* fractal)
 {
-    munmap(fractals[fractal].source, fractals[fractal].filesize);
-    close(fractals[fractal].fd);
+    munmap(fractal->source, fractal->filesize);
+    close(fractal->fd);
 }
 
 int init_ocl()
@@ -245,15 +275,13 @@ int init_ocl()
     ocl_devices = calloc(nr_platforms, sizeof(struct ocl_device));
     for (i = 0; i < nr_platforms; i++)
     {
-        err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, 0, NULL,
-                                &size);
+        err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, 0, NULL, &size);
         if (size > 99)
         {
             err = 1;
             goto deallocate_return;
         }
-        err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, size, name,
-                                NULL);
+        err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, size, name, NULL);
         printf("--- platform: %s\n", name);
         if (create_ocl_device(i, name, platforms_ids[i]))
         {
@@ -263,14 +291,14 @@ int init_ocl()
         nr_devices++;
     }
     current_device = 0;
-    open_fractal(JULIA, "julia");
-    open_fractal(MANDELBROT, "mandelbrot");
-    open_fractal(JULIA_FULL, "julia_full");
-    open_fractal(DRAGON, "dragon");
-    open_fractal(JULIA3, "julia3");
+    open_fractal(&fractals[JULIA], "julia");
+    open_fractal(&fractals[MANDELBROT], "mandelbrot");
+    open_fractal(&fractals[JULIA_FULL], "julia_full");
+    open_fractal(&fractals[DRAGON], "dragon");
+    open_fractal(&fractals[JULIA3], "julia3");
+    open_fractal(&test_fractal, "test_kernel");
 
-    for (i = 0; i < nr_devices; i++)
-        err |= create_kernels(&ocl_devices[i], "-w");
+    for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w");
 
 deallocate_return:
     free(platforms_ids);
@@ -303,7 +331,7 @@ void close_device(struct ocl_device* dev)
     err = clReleaseCommandQueue(dev->queue);
     if (err != CL_SUCCESS)
     {
-        printf("%s: clReleaseCommandQueue gpu returned %d\n", dev->name, err);
+        printf("%s: clReleaseCommandQueue returned %d\n", dev->name, err);
         return;
     }
 
@@ -321,7 +349,8 @@ int close_ocl()
     free(ocl_devices);
     for (i = 0; i < NR_FRACTALS; i++)
     {
-        close_fractal(i);
+        close_fractal(&fractals[i]);
     }
+    close_fractal(&test_fractal);
     return 0;
 }

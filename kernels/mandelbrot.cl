@@ -1,15 +1,15 @@
-#ifdef HOST_APP
-void mandelbrot(int x, int y, uint* pixels, unsigned int* colors, int mm,
-                FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                FP_TYPE er, int max_iter, int pal, int show_z)
-#else
 #ifdef FP_64_SUPPORT
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#define FP_TYPE double
+#else
+#define FP_TYPE float
 #endif
-__kernel void mandelbrot(__global uint* pixels, __global unsigned int* colors,
-                         int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty,
-                         FP_TYPE step_y, FP_TYPE er, int max_iter, int pal,
-                         int show_z, int ofs_x, int ofs_y)
+
+#ifdef HOST_APP
+void mandelbrot(int x, int y, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+                int max_iter, int pal, int show_z)
+#else
+__kernel void mandelbrot(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
+                         FP_TYPE er, int max_iter, int pal, int show_z, int ofs_x, int ofs_y)
 #endif
 {
     int i;
