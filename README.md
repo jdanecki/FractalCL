@@ -37,7 +37,9 @@ Discover and explore fractals world with OpenCL acceleration.
 
 * Neo - Intel Graphics Compute Runtime for OpenCL: https://github.com/intel/compute-runtime
 * Beignet - OpenCL Library for Intel GPU's: https://cgit.freedesktop.org/beignet
-* OpenCL CPU - OpenCL Runtime for Intel Core and Intel Xeon Processors https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime
+* OpenCL CPU - OpenCL Runtime for Intel Core and Intel Xeon Processors: https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime
+* Nvidia OpenCL 1.2 CUDA - The NVIDIA Accelerated Graphics Driver Set for Linux-x86_64: http://www.nvidia.com
+* Portable Computing Language: http://pocl.sourceforge.net
 
 # Build instruction
 
