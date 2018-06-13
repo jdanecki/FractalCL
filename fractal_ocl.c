@@ -17,6 +17,7 @@
 
 #include "fractal_ocl.h"
 #include "fractal_complex.h"
+#include "gui.h"
 
 #include "kernels/dragon.cl"
 #include "kernels/julia.cl"
@@ -24,16 +25,6 @@
 #include "kernels/julia_full.cl"
 #include "kernels/mandelbrot.cl"
 
-#include <SDL.h>
-#include <SDL_ttf.h>
-
-extern const char* font_file;
-extern TTF_Font* font;
-
-#define FONT_SIZE 20
-
-SDL_Renderer* main_window;
-SDL_Texture* texture;
 unsigned int* colors;
 void* cpu_pixels;
 
@@ -82,85 +73,6 @@ enum fractals fractal = JULIA;
 int gws_x = WIDTH / 4;
 int gws_y = HEIGHT / 4;
 unsigned long render_time;
-
-int init_window()
-{
-    SDL_Window* app_window;
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) return 1;
-#ifdef SDL_ACCELERATED
-    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED | SDL_WINDOW_OPENGL, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
-    main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_ACCELERATED);
-#else
-    app_window = SDL_CreateWindow("FractalCL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
-    main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_SOFTWARE);
-#endif
-
-    texture = SDL_CreateTexture(main_window, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
-    return 0;
-}
-
-const char* font_file = "FreeMono.ttf";
-TTF_Font* font;
-
-void init_font()
-{
-    if (TTF_Init() == -1)
-    {
-        printf("TTF_Init: %s\n", TTF_GetError());
-        exit(0);
-    }
-
-    font = TTF_OpenFont(font_file, FONT_SIZE);
-    if (font == NULL)
-    {
-        printf("TTF_OpenFont(%s) : %s\n", font_file, TTF_GetError());
-        exit(0);
-    }
-}
-
-void write_text(const char* t, int x, int y)
-{
-    SDL_Surface* temp;
-    SDL_Texture* text_box;
-    SDL_Rect dest;
-    SDL_Color text_color;
-    SDL_Color shade_color;
-
-    text_color.r = 255;
-    text_color.b = 255;
-    text_color.g = 255;
-
-    shade_color.r = 0;
-    shade_color.g = 0;
-    shade_color.b = 0;
-
-    temp = TTF_RenderUTF8_Shaded(font, t, text_color, shade_color);
-
-    if (!temp)
-    {
-        printf("TTF_RenderUTF8_Solid error\n");
-        exit(0);
-    }
-
-    text_box = SDL_CreateTextureFromSurface(main_window, temp);
-    SDL_FreeSurface(temp);
-
-    dest.x = x;
-    dest.y = y;
-    dest.w = temp->w;
-    dest.h = temp->h;
-
-    SDL_RenderCopy(main_window, text_box, NULL, &dest);
-    SDL_DestroyTexture(text_box);
-}
-
-unsigned long get_time_usec()
-{
-    struct timespec t;
-
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
-    return (t.tv_sec * 1000000 + t.tv_nsec / 1000);
-}
 
 int prepare_pixels(struct ocl_device* dev)
 {
@@ -662,7 +574,7 @@ void run_program()
 
     if (init_ocl()) return;
     init_window();
-    init_font();
+
     if (pthread_mutex_init(&lock_fin, NULL)) return;
     if (pthread_cond_init(&cond_fin, NULL)) return;
 

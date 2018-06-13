@@ -27,17 +27,6 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-
-#define WIDTH 1024
-#define HEIGHT 768
-#define WIDTH_FL (WIDTH * 1.0f)
-#define HEIGHT_FL (HEIGHT * 1.0f)
-
-#define BPP 4
-#define PITCH (WIDTH * BPP)
-#define IMAGE_SIZE (WIDTH * HEIGHT * BPP)
 
 #define STRING(VALUE) #VALUE
 #define STRING_MACRO(MACRO) STRING(MACRO)

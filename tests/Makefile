@@ -13,14 +13,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-OPENCL_LIB=$(shell pkg-config --libs OpenCL)
-INCLUDE=../include
 FP_64_SUPPORT=1
+SDL_ACCELERATED=0
+
+OPENCL_LIB=$(shell pkg-config --libs OpenCL)
+SDL2_LIB=$(shell pkg-config --libs sdl2 SDL2_ttf)
+SDL2_CFLAGS=$(shell pkg-config --cflags sdl2 SDL2_ttf)
+
+INCLUDE=../include
 CFLAGS=-g -Wall -Wno-deprecated-declarations -I$(INCLUDE) 
 
 ifeq ($(FP_64_SUPPORT), 1)
 CFLAGS+=-DFP_64_SUPPORT=1
 endif
 
-test_ocl: ../ocl.c test_ocl.c Makefile
-	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl 
+ifeq ($(SDL_ACCELERATED), 1)
+CFLAGS+=-DSDL_ACCELERATED=1
+endif
+
+all: ocl sdl
+
+ocl: ../ocl.c test_ocl.c Makefile
+	gcc -o test_$@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl 
+
+sdl: ../gui.c test_sdl.c Makefile
+	gcc -o test_$@ test_sdl.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl
+

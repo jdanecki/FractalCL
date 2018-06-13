@@ -29,22 +29,25 @@ option(SDL_ACCELERATED "Use SDL with GPU acceleration" OFF)
 
 add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
 if(FP_64_SUPPORT)
-	add_definitions("-DFP_64_SUPPORT=1")
+    add_definitions("-DFP_64_SUPPORT=1")
 endif()
 
 if(SDL_ACCELERATED)
-	add_definitions("-DSDL_ACCELERATED=1")
+    add_definitions("-DSDL_ACCELERATED=1")
 endif()
 
 add_executable(FractalCL
     fractal_ocl.c
     ocl.c
+    gui.c
     include/fractal_complex.h
     include/fractal_ocl.h
+    include/gui.h
+    include/window.h
 )
 
 target_link_libraries(FractalCL
-	${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
+    ${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
     ${OpenCL_LIBRARY}
     -lm -lrt -lpthread -ldl
 )

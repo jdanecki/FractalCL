@@ -6,7 +6,7 @@ Discover and explore fractals world with OpenCL acceleration.
 
 * Interactive animated fractals
 * Mouse support to zoom in/out
-* zoom limit set to 43000000000000 for fp64 and 300000 for fp32
+* Zoom limit set to 43000000000000 for fp64 and 300000 for fp32
 * Keyboard support for changing fractals/kernel parameters
 * OpenCL support to speed up fractals calculations
 * 2 colors models: RGB and HSV
@@ -16,7 +16,7 @@ Discover and explore fractals world with OpenCL acceleration.
 
 # Requirements 
 
-* SDL library
+* SDL2, SDL2_TTF libraries
 * OpenCL library
 
 # Implemented fractals

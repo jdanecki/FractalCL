@@ -16,6 +16,8 @@
 */
 
 #include "fractal_ocl.h"
+#include "window.h"
+#include <unistd.h>
 
 volatile int nr_devices;
 struct ocl_device* ocl_devices;

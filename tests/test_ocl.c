@@ -16,6 +16,7 @@
 */
 
 #include <fractal_ocl.h>
+#include <unistd.h>
 
 int finish_thread;
 volatile int tasks_finished;
