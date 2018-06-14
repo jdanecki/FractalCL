@@ -11,9 +11,12 @@ FP_64_SUPPORT=ON
 #Use SDL with GPU acceleration, disabled by default
 SDL_ACCELERATED=OFF
 
+#Use OpenCL to accelerate calculation, enabled by default
+OPENCL_SUPPORT=ON
+
 mkdir -p build
 cd build
-cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} -DSDL_ACCELERATED=${SDL_ACCELERATED} ..
+cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} -DSDL_ACCELERATED=${SDL_ACCELERATED} -DOPENCL_SUPPORT=${OPENCL_SUPPORT} ..
 
 ln -sf ../kernels/*.cl .
 ln -sf ../*.ttf .

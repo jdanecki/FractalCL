@@ -16,39 +16,52 @@
 project(FractalCL)
 cmake_minimum_required(VERSION 3.2)
 
+option(FP_64_SUPPORT "Use fp64 extension" ON)
+option(SDL_ACCELERATED "Use SDL with GPU acceleration" OFF)
+option(OPENCL_SUPPORT "Use OpenCL acceleration" ON)
+
 find_package(PkgConfig)
 pkg_check_modules(SDL sdl2)
 pkg_check_modules(SDL_TTF SDL2_ttf)
 
-find_package(OpenCL REQUIRED)
-
 include_directories(include)
 
-option(FP_64_SUPPORT "Use fp64 extension" ON)
-option(SDL_ACCELERATED "Use SDL with GPU acceleration" OFF)
-
 add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
+
 if(FP_64_SUPPORT)
     add_definitions("-DFP_64_SUPPORT=1")
 endif()
 
 if(SDL_ACCELERATED)
-    add_definitions("-DSDL_ACCELERATED=1")
+	add_definitions("-DSDL_ACCELERATED=1")
 endif()
 
+if(OPENCL_SUPPORT)
+    add_definitions("-DOPENCL_SUPPORT=1")
+    find_package(OpenCL REQUIRED)
+    set(OPTIONAL_LIBRARIES ${OpenCL_LIBRARY})
+    set(OPTIONAL_SOURCES
+        fractal_ocl.c
+        ocl.c
+        include/fractal_ocl.h
+        )
+endif()
+
+
+
 add_executable(FractalCL
-    fractal_ocl.c
-    ocl.c
+    fractal.c
     gui.c
     include/fractal_complex.h
-    include/fractal_ocl.h
+    include/fractal.h
     include/gui.h
     include/window.h
+    ${OPTIONAL_SOURCES}
 )
 
 target_link_libraries(FractalCL
     ${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
-    ${OpenCL_LIBRARY}
+    ${OPTIONAL_LIBRARIES}
     -lm -lrt -lpthread -ldl
 )
 

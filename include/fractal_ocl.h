@@ -15,34 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fractal_complex.h"
 #include <CL/cl.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <sched.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #define STRING(VALUE) #VALUE
 #define STRING_MACRO(MACRO) STRING(MACRO)
-
-int init_ocl();
-int close_ocl();
-
-enum fractals
-{
-    JULIA,
-    MANDELBROT,
-    JULIA_FULL,
-    DRAGON,
-    JULIA3,
-    NR_FRACTALS
-};
+#include "fractal.h"
 
 struct kernel_args
 {
@@ -109,3 +85,12 @@ struct ocl_device
 extern struct ocl_device* ocl_devices;
 extern int current_device;
 extern volatile int nr_devices;
+extern int finish_thread;
+
+int init_ocl();
+int close_ocl();
+int prepare_colors(struct ocl_device* dev);
+int prepare_pixels(struct ocl_device* dev);
+int prepare_thread(struct ocl_device* dev);
+void start_ocl();
+void clear_pixels_ocl();

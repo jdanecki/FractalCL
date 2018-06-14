@@ -70,19 +70,30 @@ Discover and explore fractals world with OpenCL acceleration.
 * dragon
 ![dragon](dragon.png)
 
-# Requirements 
+# Dependencies
 
 * SDL2, SDL2_TTF libraries
-* OpenCL library
+* OpenCL library (optional)
 
 # Build instruction
 
 * Run configure script to configure project
 * Run make to build project
-* To disable fp64 support modify configure script
+
+# Build configuration (configure script)
+
+* FP_64_SUPPORT - Use fp64 extension [ON/OFF] (default ON)
+* SDL_ACCELERATED - "Use SDL with GPU acceleration [ON/OFF] (default OFF)
+* OPENCL_SUPPORT - Use OpenCL acceleration [ON/OFF] (default ON)
 
 # Run instruction
 
 * Execute FractalCL application in build directory. Use mouse and keyboard to change fractals parameters.
 * Press ESC key to exit application.
+
+# Tests (directory tests)
+
+* test_ocl - verify OpenCL support
+* test_complex - simple tests with complex numbers
+* test_sdl - SDL2 benchmarking test
 
