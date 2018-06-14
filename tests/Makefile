@@ -31,11 +31,14 @@ ifeq ($(SDL_ACCELERATED), 1)
 CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
-all: ocl sdl
+all: ocl sdl complex
 
 ocl: ../ocl.c test_ocl.c Makefile
 	gcc -o test_$@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl 
 
 sdl: ../gui.c test_sdl.c Makefile
 	gcc -o test_$@ test_sdl.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl
+
+complex: test_complex.c Makefile
+	gcc -o test_$@ test_complex.c $(CFLAGS)
 

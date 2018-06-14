@@ -18,15 +18,21 @@
 #ifndef FRACTAL_COMPLEX_H_
 #define FRACTAL_COMPLEX_H_
 
+#ifdef FP_64_SUPPORT
+#define FP_TYPE double
+#else
+#define FP_TYPE float
+#endif
+
+#include <math.h>
+
 typedef struct
 {
     FP_TYPE x;
     FP_TYPE y;
 } complex_t;
 
-complex_t complex_t_mul(complex_t a, complex_t b);
-
-complex_t complex_t_mul(complex_t a, complex_t b)
+static inline complex_t complex_t_mul(complex_t a, complex_t b)
 {
     complex_t res;
     res.x = a.x * b.x - a.y * b.y;
@@ -34,8 +40,19 @@ complex_t complex_t_mul(complex_t a, complex_t b)
     return res;
 }
 
-complex_t complex_t_add(complex_t a, complex_t b);
-complex_t complex_t_add(complex_t a, complex_t b)
+static inline complex_t complex_t_div(complex_t a, complex_t b)
+{
+    complex_t res;
+    complex_t z1 = {b.x, -b.y};
+    complex_t z2 = complex_t_mul(a, z1);
+    FP_TYPE d = b.x * b.x + b.y * b.y;
+
+    res.x = z2.x / d;
+    res.y = z2.y / d;
+    return res;
+}
+
+static inline complex_t complex_t_add(complex_t a, complex_t b)
 {
     complex_t res;
 
@@ -44,8 +61,7 @@ complex_t complex_t_add(complex_t a, complex_t b)
     return res;
 }
 
-FP_TYPE complex_t_modul(complex_t z);
-FP_TYPE complex_t_modul(complex_t z)
+static inline FP_TYPE complex_t_modul(complex_t z)
 {
     FP_TYPE res;
 
@@ -53,8 +69,7 @@ FP_TYPE complex_t_modul(complex_t z)
     return res;
 }
 
-FP_TYPE equation(int x, FP_TYPE x1, FP_TYPE y1, FP_TYPE x2, FP_TYPE y2);
-FP_TYPE equation(int x, FP_TYPE x1, FP_TYPE y1, FP_TYPE x2, FP_TYPE y2)
+static inline FP_TYPE equation(FP_TYPE x, FP_TYPE x1, FP_TYPE y1, FP_TYPE x2, FP_TYPE y2)
 {
     FP_TYPE a = (y1 - y2) / (x1 - x2);
     FP_TYPE b = (x1 * y2 - y1 * x2) / (x1 - x2);

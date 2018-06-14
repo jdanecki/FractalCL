@@ -107,21 +107,21 @@ void draw_box(int x, int y, int w, int h, int r, int g, int b)
 void draw_double(int y, char* txt, double val)
 {
     char buf[256];
-    sprintf(buf, "%s=%f", txt, val);
+    sprintf(buf, "%s=%2.15f  ", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 
 void draw_int(int y, char* txt, int val)
 {
     char buf[256];
-    sprintf(buf, "%s=%d", txt, val);
+    sprintf(buf, "%s=%d  ", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 
 void draw_long(int y, char* txt, unsigned long val)
 {
     char buf[256];
-    sprintf(buf, "%s=%lu", txt, val);
+    sprintf(buf, "%s=%lu  ", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 

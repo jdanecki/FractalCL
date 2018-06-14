@@ -15,10 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fractal_complex.h"
 #include <CL/cl.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <math.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdio.h>
@@ -30,12 +30,6 @@
 
 #define STRING(VALUE) #VALUE
 #define STRING_MACRO(MACRO) STRING(MACRO)
-
-#ifdef FP_64_SUPPORT
-#define FP_TYPE double
-#else
-#define FP_TYPE float
-#endif
 
 int init_ocl();
 int close_ocl();

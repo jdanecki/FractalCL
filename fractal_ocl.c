@@ -16,7 +16,6 @@
 */
 
 #include "fractal_ocl.h"
-#include "fractal_complex.h"
 #include "gui.h"
 
 #include "kernels/dragon.cl"
@@ -33,7 +32,8 @@ volatile int tasks_finished;
 pthread_cond_t cond_fin;
 pthread_mutex_t lock_fin;
 
-FP_TYPE zx = 1.0, zy = 1.0;   // zoom x, y
+FP_TYPE zx = 1.0, zy = 1.0; // zoom x, y
+FP_TYPE zoom;
 FP_TYPE dx, dy;               // shift left/right, down/up
 FP_TYPE szx = 1.0, szy = 1.0; // scale x and y
 FP_TYPE mx, my;               // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
@@ -73,6 +73,8 @@ enum fractals fractal = JULIA;
 int gws_x = WIDTH / 4;
 int gws_y = HEIGHT / 4;
 unsigned long render_time;
+unsigned long frame_time;
+int draw_frames = 16;
 
 int prepare_pixels(struct ocl_device* dev)
 {
@@ -558,6 +560,52 @@ unsigned long draw_one_frame()
     tp2 = get_time_usec();
     return tp2 - tp1;
 }
+void draw_right_panel()
+{
+    int raw = 0;
+    draw_string(raw++, "===", " Main ====");
+    draw_int(raw++, "F1-F5 fractal", fractal);
+    draw_int(raw++, "v device", cur_dev);
+    draw_int(raw++, "1 show_z", show_z);
+    draw_double(raw++, "ofs_lx", ofs_lx);
+    draw_double(raw++, "ofs_rx", ofs_rx);
+    draw_double(raw++, "ofs_ty", ofs_ty);
+    draw_double(raw++, "ofs_by", ofs_by);
+
+    raw++;
+    draw_string(raw++, "==", " Parameters ===");
+    draw_int(raw++, "u/i iter", max_iter);
+    draw_double(raw++, "z/x er", er);
+    draw_double(raw++, "[/] c_x", c_x);
+    draw_double(raw++, "-/= c_y", c_y);
+    draw_int(raw++, "2/3 gws_x", gws_x);
+    draw_int(raw++, "2/3 gws_y", gws_y);
+    draw_double(raw++, "zoom", zoom);
+    draw_double(raw++, "LB/RB zx", zx);
+    draw_double(raw++, "LB/RB zy", zy);
+
+    raw++;
+    draw_string(raw++, "===", " Colors ====");
+    draw_string(raw++, "h pal", (pal) ? "RGB" : "HSV");
+    draw_hex(raw++, "o/p mm", mm);
+    draw_hex(raw++, "k/l mm", mm);
+    draw_hex(raw++, "n/m mm", mm);
+
+    raw++;
+    draw_string(raw++, "===", " Moves ====");
+    draw_double(raw++, "Left/Right szx", szx);
+    draw_double(raw++, "Down/Up szy", szy);
+    draw_double(raw++, ",/. szx", szx);
+    draw_double(raw++, ",/. szy", szy);
+    draw_double(raw++, "a/d dx", dx);
+    draw_double(raw++, "w/s dy", dy);
+
+    raw++;
+    draw_string(raw++, "=", " Benchmarking ==");
+    draw_long(raw++, "time", frame_time / draw_frames);
+    draw_long(raw++, "exec", cur_dev ? ocl_devices[current_device].execution : cpu_execution);
+    draw_long(raw++, "render", render_time);
+}
 
 void run_program()
 {
@@ -566,9 +614,8 @@ void run_program()
     int animate = 0;
     int key = 0;
     int stop_animation = 1;
-    int draw_frames = 16;
     int flip_window = 0;
-    float m1x, m1y;
+    double m1x, m1y;
     int i;
     int draw = 1;
     SDL_Rect window_rec;
@@ -602,6 +649,8 @@ void run_program()
             ofs_ty = (ofs_ty - my) * zy + my;
             ofs_by = (ofs_by - my) * zy + my;
 
+            zoom = (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx);
+
             if (ofs_lx < -10 || ofs_rx > 10 || ofs_ty > 10 || ofs_by < -10 ||
                 ((OFS_RX - OFS_LX) / (ofs_rx - ofs_lx) > (ocl_devices[current_device].fp64 ? 43000000000000 : 300000)))
             {
@@ -630,10 +679,11 @@ void run_program()
         {
             float m2x, m2y;
             int pixel;
-            unsigned long frame_time = 0;
             unsigned long tp1, tp2;
 
             flip_window = 0;
+            frame_time = 0;
+
             tp1 = get_time_usec();
 
             for (pixel = 0; pixel < draw_frames; pixel++)
@@ -642,44 +692,12 @@ void run_program()
             }
             SDL_RenderCopy(main_window, texture, NULL, &window_rec);
 
-            m2x = equation(m1x, 0, ofs_lx, WIDTH, ofs_rx);
-            m2y = equation(m1y, 0, ofs_ty, HEIGHT, ofs_by);
+            m2x = equation(m1x, 0.0f, ofs_lx, WIDTH_FL, ofs_rx);
+            m2y = equation(m1y, 0.0f, ofs_ty, HEIGHT_FL, ofs_by);
 
-            draw_string(0, "===", " Main ====");
-            draw_int(1, "F1-F5 fractal", fractal);
-            draw_int(2, "v device", cur_dev);
-            draw_int(3, "1 show_z", show_z);
+            draw_right_panel();
 
-            draw_string(4, "==", " Parameters ===");
-
-            draw_int(5, "u/i iter", max_iter);
-            draw_double(6, "z/x er", er);
-            draw_double(7, "[/] c_x", c_x);
-            draw_double(8, "-/= c_y", c_y);
-            draw_int(9, "2/3 gws_x", gws_x);
-            draw_int(10, "2/3 gws_y", gws_y);
-            draw_double(11, "zoom", (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx));
-
-            draw_string(12, "===", " Colors ====");
-            draw_string(13, "h pal", (pal) ? "RGB" : "HSV");
-            draw_hex(14, "o/p mm", mm);
-            draw_hex(15, "k/l mm", mm);
-            draw_hex(16, "n/m mm", mm);
-
-            draw_string(17, "===", " Moves ====");
-            draw_double(18, "Left/Right szx", szx);
-            draw_double(19, "Down/Up szy", szy);
-            draw_double(20, ",/. szx", szx);
-            draw_double(21, ",/. szy", szy);
-            draw_double(22, "a/d dx", dx);
-            draw_double(23, "w/s dy", dy);
-
-            draw_string(25, "=", " Benchmarking ==");
-            draw_long(26, "time", frame_time / draw_frames);
-            draw_long(27, "exec", cur_dev ? ocl_devices[current_device].execution : cpu_execution);
-            draw_long(28, "render", render_time);
-
-            sprintf(status_line, "[%2.15f,%2.15f] %s", m2x, m2y, cur_dev ? "OCL" : "CPU");
+            sprintf(status_line, "[%2.20f,%2.20f] %s", m2x, m2y, cur_dev ? "OCL" : "CPU");
             write_text(status_line, 0, HEIGHT - FONT_SIZE);
             if (cur_dev)
             {
@@ -739,37 +757,37 @@ void run_program()
                     break;
 
                 case SDLK_LEFT:
-                    szx -= 0.01;
+                    szx -= 0.01 / zoom;
                     if (szx < 0.1) szx = 0.1;
                     key = 1;
                     break;
                 case SDLK_RIGHT:
-                    szx += 0.01;
+                    szx += 0.01 / zoom;
                     key = 1;
                     break;
                 case SDLK_DOWN:
-                    szy -= 0.01;
+                    szy -= 0.01 / zoom;
                     if (szy < 0.1) szy = 0.1;
                     key = 1;
                     break;
                 case SDLK_UP:
-                    szy += 0.01;
+                    szy += 0.01 / zoom;
                     key = 1;
                     break;
                 case 'a':
-                    dx -= 0.1 / zx;
+                    dx -= 0.1 / zoom;
                     key = 1;
                     break;
                 case 'd':
-                    dx += 0.1 / zx;
+                    dx += 0.1 / zoom;
                     key = 1;
                     break;
                 case 's':
-                    dy -= 0.1 / zy;
+                    dy -= 0.1 / zoom;
                     key = 1;
                     break;
                 case 'w':
-                    dy += 0.1 / zy;
+                    dy += 0.1 / zoom;
                     key = 1;
                     break;
                 case 'z':
@@ -793,10 +811,6 @@ void run_program()
                     break;
                 case 'h':
                     pal ^= 1;
-                    if (!pal)
-                        printf("HSV\n");
-                    else
-                        printf("RGB\n");
                     break;
                 case '[':
                     c_x -= 0.001;
