@@ -360,7 +360,7 @@ void run_program()
     double m1x, m1y;
     int draw = 1;
     SDL_Rect window_rec;
-    unsigned long iter_limit = 43000000000000;
+    unsigned long long iter_limit = 43000000000000LL;
 
 #ifdef OPENCL_SUPPORT
     if (init_ocl())
@@ -370,7 +370,7 @@ void run_program()
     else
     {
         cur_dev = 1;
-        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000 : 300000;
+        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
         if (pthread_mutex_init(&lock_fin, NULL)) return;
         if (pthread_cond_init(&cond_fin, NULL)) return;
     }
