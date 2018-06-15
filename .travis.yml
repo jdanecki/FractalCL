@@ -2,7 +2,7 @@ language: c
 compiler: gcc
 sudo: required
 install:
-    - sudo apt-get update -y; sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
+    - sudo apt-get update -y; sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev ocl-icd-opencl-dev
 
 matrix:
     include:
@@ -10,5 +10,10 @@ matrix:
           env: OPENCL=OFF
           script:
               - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=OFF .
+              - make
+        - os: linux
+          env: OPENCL=ON
+          script:
+              - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=ON .
               - make
 
