@@ -639,10 +639,15 @@ void run_program()
 #ifdef OPENCL_SUPPORT
                 case 'v':
                     cur_dev++;
-                    if (cur_dev > nr_devices) cur_dev = 0;
-                    if (cur_dev)
+                    if (cur_dev > nr_devices)
                     {
+                        cur_dev = 0; // switch to CPU
+                        iter_limit = 43000000000000LL;
+                    }
+                    if (cur_dev)
+                    { // for OCL devices
                         current_device = cur_dev - 1;
+                        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
                     }
                     break;
 #endif
