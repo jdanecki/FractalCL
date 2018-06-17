@@ -44,11 +44,13 @@ Discover and explore fractals world with OpenCL acceleration.
 * h - change color pallette: RGB/HSV
 * [/] - decrease/increase c (real part) of complex number (z^2 + c, z^3 + c)
 * -/= - decrease/increase c (imaginary part) of complex number (z^2 + c, z^3 + c)
-* F1 - select Julia fractal z^2 + c
-* F2 - select Mandelbrot fractal z^2 + c
+* F1 - select Julia fractal
+* F2 - select Mandelbrot fractal
 * F3 - select Julia with gws aligned with window size
 * F4 - select dragon fractal
-* F5 - select Julia z^3 + c
+* F5 - select Julia
+* F6 - select burning ship
+* F7 - select generalized celtic
 * v - change device used for calculation:
       0 = CPU
       1,..., n = OCL device
