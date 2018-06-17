@@ -94,6 +94,15 @@ j_y = 2 * z_x * z_y + c_y;
 ![generalized_celtic](generalized_celtic.png)
 
 * dragon
+```
+random select next point
+x1 = -0.3 * xc - 1.0;
+y1 = -0.3 * yc + 0.1;
+or 
+x1 = 0.76 * xc - 0.4 * yc;
+y1 = 0.4 * xc + 0.76 * yc;
+
+```
 ![dragon](dragon.png)
 
 # Dependencies
