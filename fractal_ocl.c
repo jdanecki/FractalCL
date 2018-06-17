@@ -28,6 +28,10 @@ extern FP_TYPE ofs_lx;
 extern FP_TYPE ofs_rx;
 extern FP_TYPE ofs_ty;
 extern FP_TYPE ofs_by;
+extern FP_TYPE lx;
+extern FP_TYPE rx;
+extern FP_TYPE ty;
+extern FP_TYPE by;
 extern int gws_x;
 extern int gws_y;
 extern FP_TYPE zx, zy;
@@ -111,6 +115,12 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     FP_TYPE ofs_rx1 = (args->ofs_rx + dx) / szx;
     FP_TYPE ofs_ty1 = (args->ofs_ty + dy) / szy;
     FP_TYPE ofs_by1 = (args->ofs_by + dy) / szy;
+
+    lx = ofs_lx1;
+    rx = ofs_rx1;
+    ty = ofs_ty1;
+    by = ofs_by1;
+
     FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
     FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
 

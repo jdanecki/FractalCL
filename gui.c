@@ -125,6 +125,13 @@ void draw_long(int y, char* txt, unsigned long val)
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 
+void draw_2long(int y, char* txt1, unsigned long val1, char* txt2, unsigned long val2)
+{
+    char buf[256];
+    sprintf(buf, "%s=%lu %s=%lu     ", txt1, val1, txt2, val2);
+    write_text(buf, WIDTH, FONT_SIZE * y + 2);
+}
+
 void draw_hex(int y, char* txt, int val)
 {
     char buf[256];

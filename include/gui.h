@@ -35,3 +35,4 @@ void draw_int(int y, char* txt, int val);
 void draw_string(int y, char* txt, char* val);
 void draw_hex(int y, char* txt, int val);
 void draw_long(int y, char* txt, unsigned long val);
+void draw_2long(int y, char* txt1, unsigned long val1, char* txt2, unsigned long val2);
