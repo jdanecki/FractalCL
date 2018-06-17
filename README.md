@@ -58,14 +58,17 @@ Discover and explore fractals world with OpenCL acceleration.
 
 # Implemented fractals
 
-* julia z^2+c
+* julia z^2 + c
 ![julia](julia.png)
 
-* julia z^3+c
+* julia z^3 + c
 ![julia3](julia3.png)
 
-* mandelbrot z^2+c
+* mandelbrot z^2 + c
 ![mandelbrot](mandelbrot.png)
+
+* burning ship (|z.re| + |z.im|)^2 + c
+![burning_ship](burning_ship.png)
 
 * dragon
 ![dragon](dragon.png)

@@ -9,8 +9,8 @@ void dragon(int px, int py, uint* pixels, unsigned int* colors, int mm, FP_TYPE 
             int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #else
 
-__kernel void dragon(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                     FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+__kernel void dragon(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+                     int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #endif
 {
 #ifndef HOST_APP

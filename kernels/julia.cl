@@ -5,12 +5,12 @@
 #endif
 
 #ifdef HOST_APP
-void julia(int x, int y, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-           int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+void julia(int x, int y, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er, int max_iter,
+           int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #else
 
-__kernel void julia(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                    FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y, int ofs_x, int ofs_y)
+__kernel void julia(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+                    int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y, int ofs_x, int ofs_y)
 #endif
 {
     int i;

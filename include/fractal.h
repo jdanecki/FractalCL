@@ -34,5 +34,6 @@ enum fractals
     JULIA_FULL,
     DRAGON,
     JULIA3,
+    BURNING_SHIP,
     NR_FRACTALS
 };

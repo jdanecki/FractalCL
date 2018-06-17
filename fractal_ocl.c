@@ -198,7 +198,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
             if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y)) return 1;
         }
     }
-    if (fractal == MANDELBROT)
+    if (fractal == MANDELBROT || fractal == BURNING_SHIP)
     {
         if (set_kernel_arg(kernel, name, 11, sizeof(int), &args->ofs_x)) return 1;
         if (set_kernel_arg(kernel, name, 12, sizeof(int), &args->ofs_y)) return 1;
@@ -316,8 +316,8 @@ void start_ocl()
     {
         void* px1;
 
-        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0,
-                                 IMAGE_SIZE, 0, NULL, NULL, &err);
+        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE,
+                                 0, NULL, NULL, &err);
         if (err != CL_SUCCESS)
         {
             printf("clEnqueueMapBuffer error %d\n", err);
@@ -349,8 +349,8 @@ void clear_pixels_ocl()
         void* px1;
         int err;
 
-        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0,
-                                 IMAGE_SIZE, 0, NULL, NULL, &err);
+        px1 = clEnqueueMapBuffer(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, IMAGE_SIZE,
+                                 0, NULL, NULL, &err);
         if (err != CL_SUCCESS)
         {
             printf("clEnqueueMapBuffer "

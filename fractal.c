@@ -22,6 +22,7 @@
 #include "fractal.h"
 #endif
 
+#include "kernels/burning_ship.cl"
 #include "kernels/dragon.cl"
 #include "kernels/julia.cl"
 #include "kernels/julia3.cl"
@@ -202,12 +203,10 @@ void* execute_fractal_cpu(void* c)
             switch (fractal)
             {
             case JULIA:
-                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x,
-                      c_y);
+                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
                 break;
             case JULIA3:
-                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x,
-                       c_y);
+                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
                 break;
             case JULIA_FULL:
                 julia_full(x, y, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
@@ -215,6 +214,8 @@ void* execute_fractal_cpu(void* c)
             case MANDELBROT:
                 mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
                 break;
+            case BURNING_SHIP:
+                burning_ship(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
             default:
                 return NULL;
             }
@@ -685,6 +686,16 @@ void run_program()
                     break;
                 case SDLK_F5:
                     fractal = JULIA3;
+                    gws_x = WIDTH / 4;
+                    gws_y = HEIGHT / 4;
+                    max_iter = 360;
+                    er = 4.0f;
+                    ofs_lx = -1.5f;
+                    ofs_ty = 1.5f;
+                    clear_counters();
+                    break;
+                case SDLK_F6:
+                    fractal = BURNING_SHIP;
                     gws_x = WIDTH / 4;
                     gws_y = HEIGHT / 4;
                     max_iter = 360;

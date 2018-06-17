@@ -167,7 +167,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     size_t size;
     char* log;
 
-    char* sources[NR_FRACTALS + 1];
+    char* sources[NR_FRACTALS + 1]; // one more for test_kernel
     char cl_options[1024];
     size_t filesizes[NR_FRACTALS + 1];
     if (!dev->initialized) return 0;
@@ -178,6 +178,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     {
         sources[i] = fractals[i].source;
         filesizes[i] = fractals[i].filesize;
+        printf("preparing kernel%d]: %s\n", i, fractals[i].name);
     }
     sources[i] = test_fractal.source;
     filesizes[i] = test_fractal.filesize;
@@ -219,6 +220,8 @@ int create_kernels(struct ocl_device* dev, char* options)
     if (create_kernel(dev, &fractals[JULIA_FULL], &dev->kernels[JULIA_FULL])) return 1;
     if (create_kernel(dev, &fractals[DRAGON], &dev->kernels[DRAGON])) return 1;
     if (create_kernel(dev, &fractals[JULIA3], &dev->kernels[JULIA3])) return 1;
+    if (create_kernel(dev, &fractals[BURNING_SHIP], &dev->kernels[BURNING_SHIP])) return 1;
+
     if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
 
     printf("------------------------------------------\n");
@@ -301,6 +304,7 @@ int init_ocl()
     open_fractal(&fractals[JULIA_FULL], "julia_full");
     open_fractal(&fractals[DRAGON], "dragon");
     open_fractal(&fractals[JULIA3], "julia3");
+    open_fractal(&fractals[BURNING_SHIP], "burning_ship");
     open_fractal(&test_fractal, "test_kernel");
 
     for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w");
