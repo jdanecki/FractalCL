@@ -198,7 +198,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
             if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y)) return 1;
         }
     }
-    if (fractal == MANDELBROT || fractal == BURNING_SHIP)
+    if (fractal == MANDELBROT || fractal == BURNING_SHIP || fractal == GENERALIZED_CELTIC)
     {
         if (set_kernel_arg(kernel, name, 11, sizeof(int), &args->ofs_x)) return 1;
         if (set_kernel_arg(kernel, name, 12, sizeof(int), &args->ofs_y)) return 1;

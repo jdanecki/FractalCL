@@ -1,0 +1,1 @@
+../kernels/generalized_celtic.cl

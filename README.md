@@ -12,11 +12,11 @@ Discover and explore fractals world with OpenCL acceleration.
 * Keyboard support for changing fractals/kernel parameters
 * OpenCL support to speed up fractals calculations
 * 2 colors models: RGB and HSV
-* OpenCL kernels can be executed on CPU
+* OpenCL kernels can be executed on CPU without OpenCL libraries
 * fp64 support checked at runtime, can be disabled in configuration (configure script)
 * Suppport multiple OpenCL platforms/devices
 
-# Tested OpenCL implementations
+# Tested Linux OpenCL implementations
 
 * Neo - Intel Graphics Compute Runtime for OpenCL: https://github.com/intel/compute-runtime
 * Beignet - OpenCL Library for Intel GPU's: https://cgit.freedesktop.org/beignet
@@ -58,17 +58,40 @@ Discover and explore fractals world with OpenCL acceleration.
 
 # Implemented fractals
 
-* julia z^2 + c
+* julia
+```
+j_x = z_x * z_x - z_y * z_y + c_x;
+j_y = 2 * z_x * z_y + c_y;
+```
 ![julia](julia.png)
 
-* julia z^3 + c
+* julia
+```
+j_x = z_x * z_x * z_x - 3 * z_x * z_y * z_y + c_x;
+j_y = 3 * z_x * z_x * z_y - z_y * z_y * z_y + c_y;
+```
 ![julia3](julia3.png)
 
-* mandelbrot z^2 + c
+* mandelbrot
+```
+j_x = z_x * z_x - z_y * z_y + c_x;
+j_y = 2 * z_x * z_y + c_y;
+```
 ![mandelbrot](mandelbrot.png)
 
-* burning ship (|z.re| + |z.im|)^2 + c
+* burning ship
+```
+j_x = z_x * z_x - z_y * z_y + c_x;
+j_y = 2 * fabs(z_x * z_y) + c_y;
+```
 ![burning_ship](burning_ship.png)
+
+* generalized celtic
+```
+j_x = fabs(z_x * z_x - z_y * z_y) + c_x;
+j_y = 2 * z_x * z_y + c_y;
+```
+![generalized_celtic](generalized_celtic.png)
 
 * dragon
 ![dragon](dragon.png)

@@ -221,6 +221,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     if (create_kernel(dev, &fractals[DRAGON], &dev->kernels[DRAGON])) return 1;
     if (create_kernel(dev, &fractals[JULIA3], &dev->kernels[JULIA3])) return 1;
     if (create_kernel(dev, &fractals[BURNING_SHIP], &dev->kernels[BURNING_SHIP])) return 1;
+    if (create_kernel(dev, &fractals[GENERALIZED_CELTIC], &dev->kernels[GENERALIZED_CELTIC])) return 1;
 
     if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
 
@@ -305,6 +306,8 @@ int init_ocl()
     open_fractal(&fractals[DRAGON], "dragon");
     open_fractal(&fractals[JULIA3], "julia3");
     open_fractal(&fractals[BURNING_SHIP], "burning_ship");
+    open_fractal(&fractals[GENERALIZED_CELTIC], "generalized_celtic");
+
     open_fractal(&test_fractal, "test_kernel");
 
     for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w");

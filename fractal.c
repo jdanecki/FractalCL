@@ -24,6 +24,7 @@
 
 #include "kernels/burning_ship.cl"
 #include "kernels/dragon.cl"
+#include "kernels/generalized_celtic.cl"
 #include "kernels/julia.cl"
 #include "kernels/julia3.cl"
 #include "kernels/julia_full.cl"
@@ -216,6 +217,10 @@ void* execute_fractal_cpu(void* c)
                 break;
             case BURNING_SHIP:
                 burning_ship(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
+                break;
+            case GENERALIZED_CELTIC:
+                generalized_celtic(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
+                break;
             default:
                 return NULL;
             }
@@ -293,7 +298,7 @@ void draw_right_panel()
     unsigned long avg;
 
     draw_string(raw++, "===", " Main ====");
-    draw_int(raw++, "F1-F5 fractal", fractal);
+    draw_int(raw++, "F1-F7 fractal", fractal);
 #ifdef OPENCL_SUPPORT
     draw_int(raw++, "v device", cur_dev);
 #endif
@@ -704,6 +709,17 @@ void run_program()
                     ofs_ty = 1.5f;
                     clear_counters();
                     break;
+                case SDLK_F7:
+                    fractal = GENERALIZED_CELTIC;
+                    gws_x = WIDTH / 4;
+                    gws_y = HEIGHT / 4;
+                    max_iter = 360;
+                    er = 4.0f;
+                    ofs_lx = -1.5f;
+                    ofs_ty = 1.5f;
+                    clear_counters();
+                    break;
+
 #ifdef OPENCL_SUPPORT
                 case 'v':
                     cur_dev++;

@@ -35,5 +35,6 @@ enum fractals
     DRAGON,
     JULIA3,
     BURNING_SHIP,
+    GENERALIZED_CELTIC,
     NR_FRACTALS
 };
