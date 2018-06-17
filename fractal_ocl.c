@@ -293,7 +293,6 @@ int signal_device(struct ocl_device* dev)
 
 void start_ocl()
 {
-    int err;
     if (!nr_devices) return;
 
     if (signal_device(&ocl_devices[current_device]))
@@ -311,7 +310,11 @@ void start_ocl()
     //    printf("tasks finished\n");
     tasks_finished = 0;
     pthread_mutex_unlock(&lock_fin);
+}
 
+void update_gpu_texture()
+{
+    int err;
     if (ocl_devices[current_device].initialized)
     {
         void* px1;

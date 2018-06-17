@@ -94,3 +94,4 @@ int prepare_pixels(struct ocl_device* dev);
 int prepare_thread(struct ocl_device* dev);
 void start_ocl();
 void clear_pixels_ocl();
+void update_gpu_texture();

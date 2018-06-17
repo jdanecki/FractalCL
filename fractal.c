@@ -288,7 +288,6 @@ void start_cpu()
     }
     tp2 = get_time_usec();
     cpu_execution = tp2 - tp1;
-    SDL_UpdateTexture(texture, NULL, cpu_pixels, WIDTH * 4);
 }
 
 void draw_right_panel()
@@ -478,6 +477,15 @@ void run_program()
             for (pixel = 0; pixel < draw_frames; pixel++)
             {
                 frame_time += draw_one_frame();
+            }
+
+            if (cur_dev)
+            {
+                update_gpu_texture();
+            }
+            else
+            {
+                SDL_UpdateTexture(texture, NULL, cpu_pixels, WIDTH * 4);
             }
             SDL_RenderCopy(main_window, texture, NULL, &window_rec);
 
