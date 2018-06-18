@@ -356,6 +356,7 @@ void draw_right_panel()
 
 #else
     exec_time = cpu_execution;
+    avg = cpu_iter ? cpu_executions / cpu_iter : 0;
 #endif
     draw_2long(raw++, "exec", exec_time, "avg", avg);
     draw_2long(raw++, "render", render_time, "avg", flips ? render_times / flips : 0);
@@ -480,12 +481,13 @@ void run_program()
             {
                 frame_time += draw_one_frame();
             }
-
+#ifdef OPENCL_SUPPORT
             if (cur_dev)
             {
                 update_gpu_texture();
             }
             else
+#endif
             {
                 SDL_UpdateTexture(texture, NULL, cpu_pixels, WIDTH * 4);
             }
