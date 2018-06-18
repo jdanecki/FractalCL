@@ -61,7 +61,7 @@ add_executable(FractalCL
 
 target_link_libraries(FractalCL
     ${SDL_LDFLAGS} ${SDL_TTF_LDFLAGS}
-    ${OPTIONAL_LIBRARIES}
-    -lm -lrt -lpthread -ldl
+    ${OPTIONAL_LIBRARIES} 
+    -lm -lpthread
 )
 
