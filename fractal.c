@@ -93,6 +93,8 @@ extern pthread_mutex_t lock_fin;
 extern volatile int tasks_finished;
 #endif
 
+int performance_test;
+
 int initialize_colors()
 {
     int err, v, iter;
@@ -463,7 +465,7 @@ void run_program()
             SDL_Delay(1);
         }
 
-        if (flip_window)
+        if (flip_window || performance_test)
         {
             float m2x, m2y;
             int pixel;
@@ -744,6 +746,9 @@ void run_program()
                     clear_counters();
                     break;
 #endif
+                case SDLK_SPACE:
+                    performance_test ^= 1;
+                    break;
                 }
                 draw = 1;
                 draw_frames = 16;
