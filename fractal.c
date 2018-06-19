@@ -94,6 +94,7 @@ extern volatile int tasks_finished;
 #endif
 
 int performance_test;
+unsigned long last_avg_result;
 
 int initialize_colors()
 {
@@ -292,11 +293,11 @@ void start_cpu()
     cpu_execution = tp2 - tp1;
 }
 
-void draw_right_panel()
+void draw_right_panel(int column)
 {
     int raw = 0;
     unsigned long exec_time;
-    unsigned long avg;
+    unsigned long avg, r_avg;
 
     draw_string(raw++, "===", " Main ====");
     draw_int(raw++, "F1-F7 fractal", fractal);
@@ -340,7 +341,7 @@ void draw_right_panel()
     draw_double(raw++, "w/s dy", dy);
 
     raw++;
-    draw_string(raw++, "=", " Benchmarking ==");
+    draw_string(raw++, "SPACE", " Benchmarking [us]");
     draw_long(raw++, "time", frame_time / draw_frames);
 #ifdef OPENCL_SUPPORT
     if (cur_dev)
@@ -359,7 +360,38 @@ void draw_right_panel()
     avg = cpu_iter ? cpu_executions / cpu_iter : 0;
 #endif
     draw_2long(raw++, "exec", exec_time, "avg", avg);
-    draw_2long(raw++, "render", render_time, "avg", flips ? render_times / flips : 0);
+    last_avg_result = avg;
+    r_avg = flips ? render_times / flips : 0;
+    draw_2long(raw++, "render", render_time, "avg", r_avg);
+
+    if (performance_test)
+    {
+        unsigned long res = 0;
+        SDL_Rect dst;
+
+        dst.w = 5;
+        dst.x = column;
+        dst.y = 0;
+
+        if (r_avg)
+        {
+            res = (HEIGHT_FL - 40) * (frame_time / draw_frames) / r_avg;
+        }
+        dst.h = res;
+
+        SDL_SetRenderDrawColor(main_window, 255, 128, 128, 255);
+        SDL_RenderFillRect(main_window, &dst);
+
+        if (r_avg)
+        {
+            res = (HEIGHT_FL - 40) * avg / r_avg;
+        }
+        dst.h = res;
+        if (dst.x + 5 < WIDTH) dst.x += 5;
+
+        SDL_SetRenderDrawColor(main_window, 128, 255, 128, 255);
+        SDL_RenderFillRect(main_window, &dst);
+    }
 }
 
 unsigned long draw_one_frame()
@@ -407,6 +439,7 @@ void run_program()
     int draw = 1;
     SDL_Rect window_rec;
     unsigned long long iter_limit = 43000000000000LL;
+    int column = 0;
 
 #ifdef OPENCL_SUPPORT
     if (init_ocl())
@@ -496,7 +529,12 @@ void run_program()
             m2x = equation(m1x, 0.0f, lx, WIDTH_FL, rx);
             m2y = equation(m1y, 0.0f, ty, HEIGHT_FL, by);
 
-            draw_right_panel();
+            draw_right_panel(column);
+            if (performance_test)
+            {
+                column++;
+                column %= WIDTH;
+            }
 
             sprintf(status_line, "[%2.20f,%2.20f] %s", m2x, m2y, cur_dev ? "OCL" : "CPU");
             write_text(status_line, 0, HEIGHT - FONT_SIZE);
@@ -734,6 +772,7 @@ void run_program()
 
 #ifdef OPENCL_SUPPORT
                 case 'v':
+
                     cur_dev++;
                     if (cur_dev > nr_devices)
                     {
@@ -750,6 +789,21 @@ void run_program()
 #endif
                 case SDLK_SPACE:
                     performance_test ^= 1;
+                    if (performance_test)
+                    {
+                        clear_counters();
+                        column = 0;
+                    }
+                    else
+                    {
+                        printf("performance result for %s = %lu\n",
+#ifdef OPENCL_SUPPORT
+                               cur_dev ? ocl_devices[current_device].name : "CPU",
+#else
+                               "CPU",
+#endif
+                               last_avg_result);
+                    }
                     break;
                 }
                 draw = 1;
@@ -761,8 +815,11 @@ void run_program()
                 if (event.button.x > WIDTH) continue;
                 m1x = event.button.x;
                 m1y = event.button.y;
-                flip_window = 1;
-                draw_frames = 1;
+                if (!performance_test)
+                {
+                    flip_window = 1;
+                    draw_frames = 1;
+                }
             }
 
             if (event.type == SDL_MOUSEBUTTONDOWN)
