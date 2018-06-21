@@ -5,12 +5,12 @@
 #endif
 
 #ifdef HOST_APP
-void dragon(int px, int py, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-            int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+void dragon(int px, int py, uint* pixels, unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+            unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #else
 
-__kernel void dragon(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-                     int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+__kernel void dragon(__global uint* pixels, __global unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
+                     FP_TYPE er, unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #endif
 {
 #ifndef HOST_APP
@@ -18,7 +18,7 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors, int m
     int py = get_global_id(1);
 #endif
     int x, y;
-    int r;
+    unsigned int r;
     float x1 = 0, y1 = 0;
     float xc = 0, yc = 0;
 
@@ -34,18 +34,18 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors, int m
 #endif
             if (select_move)
             {
-                x1 = -0.3 * xc - 1.0;
-                y1 = -0.3 * yc + 0.1;
+                x1 = -0.3 * xc - 1.0 + (c_x - 0.15f);
+                y1 = -0.3 * yc + 0.1 + (c_y + 0.60f);
             }
             else
             {
-                x1 = 0.76 * xc - 0.4 * yc;
-                y1 = 0.4 * xc + 0.76 * yc;
+                x1 = 0.76 * xc - 0.4 * yc + (c_x - 0.15f);
+                y1 = 0.4 * xc + 0.76 * yc + (c_y + 0.60f);
             }
             xc = x1;
             yc = y1;
-            x = (ofs_lx + x1) * mm;
-            y = (ofs_ty + y1) * mm;
+            x = (ofs_lx + x1) / step_x;
+            y = (ofs_ty + y1) / step_y;
             if (x < WIDTH / 2 && y < HEIGHT / 2 && x > -WIDTH / 2 && y > -HEIGHT / 2)
             {
                 pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r;

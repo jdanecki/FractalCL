@@ -5,14 +5,14 @@
 #endif
 
 #ifdef HOST_APP
-void julia_full(int x, int y, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-                int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+void julia_full(int x, int y, uint* pixels, unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+                unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #else
-__kernel void julia_full(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                         FP_TYPE er, int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+__kernel void julia_full(__global uint* pixels, __global unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
+                         FP_TYPE er, unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
 #endif
 {
-    int i;
+    unsigned int i;
     uint color = 0;
     FP_TYPE j_x, j_y;
     FP_TYPE z_julia_x, z_julia_y, d;

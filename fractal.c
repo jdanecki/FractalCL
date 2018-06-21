@@ -30,62 +30,14 @@
 #include "kernels/julia_full.cl"
 #include "kernels/mandelbrot.cl"
 
+#include "parameters.h"
+
 unsigned int* colors;
 void* cpu_pixels;
 
-FP_TYPE zx = 1.0, zy = 1.0; // zoom x, y
-FP_TYPE zoom = 1.0f;
-FP_TYPE dx, dy;               // shift left/right, down/up
-FP_TYPE szx = 1.0, szy = 1.0; // scale x and y
-FP_TYPE mx, my;               // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
-
-int mm = 16;
-int gws_x = WIDTH / 4;
-int gws_y = HEIGHT / 4;
-
-#if 0
-FP_TYPE ofs_lx = -0.7402f;//-1.5f; //0.094; //-1.5f;
-FP_TYPE ofs_rx = -0.7164f; //-0.716403707741993;//1.5f; //0.096; //1.5f;
-FP_TYPE ofs_ty = 0.2205f;//0.283962759342063; //1.5f; //0.504f; //1.5f;
-FP_TYPE ofs_by = 0.1690f;//0.283962759341958; //-1.5f; //0.503f; //-1.5f;
-#else
-#define OFS_LX -1.5f
-#define OFS_RX 1.5f
-
-FP_TYPE ofs_lx = OFS_LX;
-FP_TYPE ofs_rx = OFS_RX;
-FP_TYPE ofs_ty = 1.5f;
-FP_TYPE ofs_by = -1.5f;
-FP_TYPE lx;
-FP_TYPE rx;
-FP_TYPE ty;
-FP_TYPE by;
-#endif
-FP_TYPE er = 4.0f;
-
-int max_iter = 360;
-int pal = 0; // 0=hsv 1=rgb
-int show_z;
-FP_TYPE c_x = 0.15f;
-FP_TYPE c_y = -0.60f;
-// FP_TYPE c_x = -0.7f;
-// FP_TYPE c_y = 0.27015f;
-
 char status_line[200];
 
-int cur_dev; // 0 - CPU, 1,..nr_devices - OCL devices
-
-enum fractals fractal = JULIA;
-
-unsigned long render_time;
-unsigned long render_times;
-unsigned long flips;
-unsigned long frame_time;
 int draw_frames = 16;
-
-unsigned long cpu_execution;
-unsigned long cpu_executions, gpu_executions;
-unsigned long cpu_iter, gpu_iter;
 
 #ifdef OPENCL_SUPPORT
 extern pthread_cond_t cond_fin;
@@ -112,7 +64,7 @@ int initialize_colors()
     {
         for (iter = 0; iter < 360; iter++)
         {
-            float h1 = (iter % 360) / 60.0;
+            float h1 = iter / 60.0;
             float v1 = 1.0 * v;
             int r, g, b;
             float r1, g1, b1, i, f, p, q, t;
@@ -326,10 +278,13 @@ void draw_right_panel(int column)
 
     raw++;
     draw_string(raw++, "===", " Colors ====");
-    draw_string(raw++, "h pal", (pal) ? "RGB" : "HSV");
-    draw_hex(raw++, "o/p mm", mm);
-    draw_hex(raw++, "k/l mm", mm);
-    draw_hex(raw++, "n/m mm", mm);
+    draw_string(raw++, "h pal", (pal) ? "HSV" : "RGB");
+    if (!pal)
+    {
+        draw_hex(raw++, "o/p channel", color_channel);
+        draw_hex(raw++, "k/l +-1", mm);
+        draw_hex(raw++, "n/m +-16", mm);
+    }
 
     raw++;
     draw_string(raw++, "===", " Moves ====");
@@ -342,7 +297,7 @@ void draw_right_panel(int column)
 
     raw++;
     draw_string(raw++, "SPACE", " Benchmarking [us]");
-    draw_long(raw++, "time", frame_time / draw_frames);
+    draw_long(raw++, "time", frames_time / draw_frames);
 #ifdef OPENCL_SUPPORT
     if (cur_dev)
     {
@@ -375,7 +330,7 @@ void draw_right_panel(int column)
 
         if (r_avg)
         {
-            res = (HEIGHT_FL - 40) * (frame_time / draw_frames) / r_avg;
+            res = (HEIGHT_FL - 40) * (frames_time / draw_frames) / r_avg;
         }
         dst.h = res;
 
@@ -394,37 +349,46 @@ void draw_right_panel(int column)
     }
 }
 
-unsigned long draw_one_frame()
+void show_pallete()
 {
-    unsigned long tp1, tp2;
-
-    tp1 = get_time_usec();
-#ifdef OPENCL_SUPPORT
-    if (cur_dev)
+    int x;
+    for (x = 0; x < 720; x++)
     {
-        start_ocl();
-        gpu_executions += ocl_devices[current_device].execution;
-        gpu_iter++;
+        int r = (colors[x] & 0xff0000) >> 16;
+        int g = (colors[x] & 0x00ff00) >> 8;
+        int b = colors[x] & 0xff;
+        SDL_SetRenderDrawColor(main_window, r, g, b, 255);
+        SDL_RenderDrawLine(main_window, x, 0, x, HEIGHT - 40);
     }
-    else
-#endif
-    {
-        start_cpu();
-        cpu_executions += cpu_execution;
-        cpu_iter++;
-    }
-    tp2 = get_time_usec();
-    return tp2 - tp1;
+    SDL_RenderPresent(main_window);
 }
 
-void clear_counters()
+void prepare_frames()
 {
-    cpu_iter = 0;
-    cpu_executions = 0;
-    gpu_iter = 0;
-    gpu_executions = 0;
-    render_times = 0;
-    flips = 0;
+    unsigned long tp1, tp2;
+    int pixel;
+    frames_time = 0;
+
+    for (pixel = 0; pixel < draw_frames; pixel++)
+    {
+        tp1 = get_time_usec();
+#ifdef OPENCL_SUPPORT
+        if (cur_dev)
+        {
+            start_ocl();
+            gpu_executions += ocl_devices[current_device].execution;
+            gpu_iter++;
+        }
+        else
+#endif
+        {
+            start_cpu();
+            cpu_executions += cpu_execution;
+            cpu_iter++;
+        }
+        tp2 = get_time_usec();
+        frames_time += tp2 - tp1;
+    }
 }
 
 void run_program()
@@ -438,7 +402,6 @@ void run_program()
     double m1x, m1y;
     int draw = 1;
     SDL_Rect window_rec;
-    unsigned long long iter_limit = 43000000000000LL;
     int column = 0;
 
 #ifdef OPENCL_SUPPORT
@@ -468,19 +431,10 @@ void run_program()
     {
         if (animate || key)
         {
-            ofs_lx = (ofs_lx - mx) * zx + mx;
-            ofs_rx = (ofs_rx - mx) * zx + mx;
-
-            ofs_ty = (ofs_ty - my) * zy + my;
-            ofs_by = (ofs_by - my) * zy + my;
-
-            zoom = (OFS_RX - OFS_LX) / (ofs_rx - ofs_lx);
-
-            if (ofs_lx < -10 || ofs_rx > 10 || ofs_ty > 10 || ofs_by < -10 || ((OFS_RX - OFS_LX) / (ofs_rx - ofs_lx) > iter_limit))
+            if (calculate_offsets())
             {
                 dx = 0;
                 dy = 0;
-
                 draw = 0;
                 animate = 0;
                 draw_frames = 16;
@@ -488,6 +442,14 @@ void run_program()
             }
         }
         if (fractal == DRAGON) draw_frames = 1;
+        if (pal == 2)
+        {
+            draw = 0;
+            flip_window = 0;
+            stop_animation = 0;
+            performance_test = 0;
+            show_pallete();
+        }
 
         if (draw || stop_animation)
         {
@@ -502,18 +464,12 @@ void run_program()
         if (flip_window || performance_test)
         {
             float m2x, m2y;
-            int pixel;
             unsigned long tp1, tp2;
 
             flip_window = 0;
-            frame_time = 0;
-
             tp1 = get_time_usec();
 
-            for (pixel = 0; pixel < draw_frames; pixel++)
-            {
-                frame_time += draw_one_frame();
-            }
+            prepare_frames();
 #ifdef OPENCL_SUPPORT
             if (cur_dev)
             {
@@ -571,99 +527,84 @@ void run_program()
                 case 27:
                     goto finish;
                 case 'u':
-                    max_iter -= 10;
-                    if (max_iter < 10) max_iter = 10;
-                    clear_counters();
+                    dec_int(&max_iter, 10, 10, 1);
                     break;
                 case 'i':
-                    max_iter += 10;
-                    clear_counters();
-                    break;
-                case 'o':
-                    mm++;
+                    inc_int(&max_iter, 1, 1);
                     break;
                 case 'p':
-                    mm--;
-                    if (!mm) mm = 1;
+                    color_channel++;
+                    if (color_channel > 2) color_channel = 2;
                     break;
-                case 'k':
-                    mm += 100;
+                case 'o':
+                    color_channel--;
+                    if (color_channel < 0) color_channel = 0;
                     break;
                 case 'l':
-                    mm -= 100;
-                    if (mm < 1) mm = 1;
+                    mm += 1 << (color_channel * 8);
                     break;
-                case 'n':
-                    mm += 1000;
+                case 'k':
+                    mm -= 1 << (color_channel * 8);
                     break;
                 case 'm':
-                    mm -= 1000;
-                    if (mm < 1) mm = 1;
+                    mm += 16 << (color_channel * 8);
+                    break;
+                case 'n':
+                    mm -= 16 << (color_channel * 8);
                     break;
 
                 case SDLK_LEFT:
-                    szx -= zoom ? 0.01 / zoom : 0.01;
-                    if (szx < 0.1) szx = 0.1;
+                    dec_float(&szx, 0.01 / zoom, 0.1, 1);
                     key = 1;
-                    clear_counters();
                     break;
                 case SDLK_RIGHT:
-                    szx += zoom ? 0.01 / zoom : 0.01;
+                    inc_float(&szx, 0.01 / zoom, 1);
                     key = 1;
-                    clear_counters();
                     break;
                 case SDLK_DOWN:
-                    szy -= zoom ? 0.01 / zoom : 0.01;
-                    if (szy < 0.1) szy = 0.1;
+                    dec_float(&szy, 0.01 / zoom, 0.1, 1);
                     key = 1;
-                    clear_counters();
                     break;
                 case SDLK_UP:
-                    szy += zoom ? 0.01 / zoom : 0.01;
+                    inc_float(&szy, 0.01 / zoom, 1);
                     key = 1;
-                    clear_counters();
                     break;
                 case 'a':
-                    dx -= zoom ? 0.1 / zoom : 0.1;
+                    inc_float(&dx, -0.1 / zoom, 0);
                     key = 1;
                     break;
                 case 'd':
-                    dx += zoom ? 0.1 / zoom : 0.1;
+                    inc_float(&dx, 0.1 / zoom, 0);
                     key = 1;
                     break;
                 case 's':
-                    dy -= zoom ? 0.1 / zoom : 0.1;
+                    inc_float(&dy, -0.1 / zoom, 0);
                     key = 1;
                     break;
                 case 'w':
-                    dy += zoom ? 0.1 / zoom : 0.1;
+                    inc_float(&dy, 0.1 / zoom, 0);
                     key = 1;
                     break;
                 case 'z':
-                    er -= 0.1;
-                    if (er < 0.0f) er = 0.0f;
-                    clear_counters();
+                    dec_float(&er, 0.1, 0.1, 1);
                     break;
                 case 'x':
-                    er += 0.1;
-                    clear_counters();
+                    inc_float(&er, 0.1, 1);
                     break;
                 case SDLK_COMMA:
-                    szx += 1.0;
-                    szy += 1.0;
+                    inc_float(&szx, 1.0, 0);
+                    inc_float(&szy, 1.0, 1);
                     key = 1;
-                    clear_counters();
                     break;
                 case SDLK_PERIOD:
-                    szx -= 1.0;
-                    szy -= 1.0;
-                    if (szy < 0.1) szy = 0.1;
-                    if (szx < 0.1) szx = 0.1;
+                    dec_float(&szx, 1.0, 1.0, 0);
+                    dec_float(&szy, 1.0, 1.0, 0);
                     key = 1;
-                    clear_counters();
                     break;
                 case 'h':
-                    pal ^= 1;
+                    pal -= 1;
+                    draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
+                    if (pal < 0) pal = 2;
                     break;
                 case '[':
                     c_x -= 0.001;
@@ -697,39 +638,16 @@ void run_program()
                     c_y += 0.001;
                     break;
                 case SDLK_F1:
-                    fractal = JULIA;
-                    gws_x = WIDTH / 4;
-                    gws_y = HEIGHT / 4;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(JULIA, 4);
                     break;
                 case SDLK_F2:
-                    fractal = MANDELBROT;
-                    gws_x = WIDTH / 4;
-                    gws_y = HEIGHT / 4;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(MANDELBROT, 4);
                     break;
                 case SDLK_F3:
-                    fractal = JULIA_FULL;
-                    gws_x = WIDTH;
-                    gws_y = HEIGHT;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(JULIA_FULL, 1);
                     break;
                 case SDLK_F4:
-                    fractal = DRAGON;
-                    gws_x = WIDTH;
-                    gws_y = HEIGHT;
+                    set_fractal(DRAGON, 1);
                     max_iter = 10000;
                     er = 0.9f;
                     ofs_lx = 0.0f;
@@ -740,34 +658,13 @@ void run_program()
                     clear_counters();
                     break;
                 case SDLK_F5:
-                    fractal = JULIA3;
-                    gws_x = WIDTH / 4;
-                    gws_y = HEIGHT / 4;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(JULIA3, 4);
                     break;
                 case SDLK_F6:
-                    fractal = BURNING_SHIP;
-                    gws_x = WIDTH / 4;
-                    gws_y = HEIGHT / 4;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(BURNING_SHIP, 4);
                     break;
                 case SDLK_F7:
-                    fractal = GENERALIZED_CELTIC;
-                    gws_x = WIDTH / 4;
-                    gws_y = HEIGHT / 4;
-                    max_iter = 360;
-                    er = 4.0f;
-                    ofs_lx = -1.5f;
-                    ofs_ty = 1.5f;
-                    clear_counters();
+                    set_fractal(GENERALIZED_CELTIC, 4);
                     break;
 
 #ifdef OPENCL_SUPPORT

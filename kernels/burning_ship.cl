@@ -5,14 +5,14 @@
 #endif
 
 #ifdef HOST_APP
-void burning_ship(int x, int y, uint* pixels, unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-                  int max_iter, int pal, int show_z)
+void burning_ship(int x, int y, uint* pixels, unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
+                  unsigned int max_iter, int pal, int show_z)
 #else
-__kernel void burning_ship(__global uint* pixels, __global unsigned int* colors, int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                           FP_TYPE er, int max_iter, int pal, int show_z, int ofs_x, int ofs_y)
+__kernel void burning_ship(__global uint* pixels, __global unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty,
+                           FP_TYPE step_y, FP_TYPE er, unsigned int max_iter, int pal, int show_z, int ofs_x, int ofs_y)
 #endif
 {
-    int i;
+    unsigned int i;
     unsigned int color = 0;
     FP_TYPE j_x, j_y;
     FP_TYPE z_x = 0, z_y = 0;
@@ -40,7 +40,7 @@ __kernel void burning_ship(__global uint* pixels, __global unsigned int* colors,
         z_y = j_y;
         i++;
     }
-    if (pal)
+    if (!pal)
         color = 0xff000000 + i * mm;
     else
         color = colors[i % 360 + 360 * (i < max_iter)];

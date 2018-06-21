@@ -17,6 +17,7 @@
 
 #include "fractal_ocl.h"
 #include "gui.h"
+#include "parameters.h"
 
 int finish_thread;
 pthread_cond_t cond_fin;
@@ -24,30 +25,6 @@ pthread_mutex_t lock_fin;
 volatile int tasks_finished;
 
 extern unsigned int* colors;
-extern FP_TYPE ofs_lx;
-extern FP_TYPE ofs_rx;
-extern FP_TYPE ofs_ty;
-extern FP_TYPE ofs_by;
-extern FP_TYPE lx;
-extern FP_TYPE rx;
-extern FP_TYPE ty;
-extern FP_TYPE by;
-extern int gws_x;
-extern int gws_y;
-extern FP_TYPE zx, zy;
-extern FP_TYPE zoom;
-extern FP_TYPE dx, dy;
-extern FP_TYPE szx, szy;
-extern FP_TYPE mx, my;
-extern int mm;
-extern FP_TYPE er;
-extern int max_iter;
-extern int pal;
-extern int show_z;
-extern FP_TYPE c_x;
-extern FP_TYPE c_y;
-extern enum fractals fractal;
-
 int prepare_pixels(struct ocl_device* dev)
 {
     int err;

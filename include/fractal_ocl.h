@@ -24,13 +24,13 @@ struct kernel_args
 {
     void* pixels;
     unsigned int* colors;
-    int mm;
+    unsigned int mm;
     FP_TYPE ofs_lx;
     FP_TYPE ofs_rx;
     FP_TYPE ofs_ty;
     FP_TYPE ofs_by;
     FP_TYPE er;
-    int max_iter;
+    unsigned int max_iter;
     int pal;
     int show_z;
     FP_TYPE c_x, c_y;

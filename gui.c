@@ -135,7 +135,7 @@ void draw_2long(int y, char* txt1, unsigned long val1, char* txt2, unsigned long
 void draw_hex(int y, char* txt, int val)
 {
     char buf[256];
-    sprintf(buf, "%s=%x", txt, val);
+    sprintf(buf, "%s=%-8x", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 

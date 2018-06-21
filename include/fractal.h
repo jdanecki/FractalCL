@@ -15,6 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _FRACTAL_H_
+#define _FRACTAL_H_
+
 #include "fractal_complex.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -38,3 +41,5 @@ enum fractals
     GENERALIZED_CELTIC,
     NR_FRACTALS
 };
+
+#endif

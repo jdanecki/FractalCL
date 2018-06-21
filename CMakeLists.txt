@@ -52,10 +52,12 @@ endif()
 add_executable(FractalCL
     fractal.c
     gui.c
+	parameters.c
     include/fractal_complex.h
     include/fractal.h
     include/gui.h
     include/window.h
+	include/parameters.h
     ${OPTIONAL_SOURCES}
 )
 
