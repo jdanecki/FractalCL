@@ -16,4 +16,5 @@ matrix:
           script:
               - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=ON .
               - make
+              - make -C tests
 
