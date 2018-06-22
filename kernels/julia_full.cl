@@ -37,5 +37,6 @@ __kernel void julia_full(__global uint* pixels, __global unsigned int* colors, u
     }
 
     color = colors[i % 360 + 360 * (i < max_iter)];
+    color |= mm;
     pixels[y * WIDTH + x] = color;
 }

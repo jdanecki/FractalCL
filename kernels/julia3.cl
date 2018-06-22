@@ -38,10 +38,13 @@ __kernel void julia3(__global uint* pixels, __global unsigned int* colors, unsig
         z_y = j_y;
         i++;
     }
-    if (!pal)
-        color = 0xff000000 + i * mm;
+    if (pal)
+        color = 0xff000000 | i | mm;
     else
+    {
         color = colors[i % 360 + 360 * (i < max_iter)];
+        color |= mm;
+    }
 
     if (show_z)
     {

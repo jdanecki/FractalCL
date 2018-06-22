@@ -87,7 +87,7 @@ int init_window()
     main_window = SDL_CreateRenderer(app_window, -1, SDL_RENDERER_SOFTWARE);
 #endif
 
-    texture = SDL_CreateTexture(main_window, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
+    texture = SDL_CreateTexture(main_window, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
     init_font();
     draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
     return 0;

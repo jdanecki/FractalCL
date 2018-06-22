@@ -47,7 +47,8 @@ FP_TYPE by;
 FP_TYPE er = 4.0f;
 
 unsigned int max_iter = 360;
-int pal = 1; // [1, 2]=hsv 0=rgb
+int pal;     // 0=hsv 1=rgb
+int palette; // 1 - show palette
 int show_z;
 FP_TYPE c_x = 0.15f;
 FP_TYPE c_y = -0.60f;

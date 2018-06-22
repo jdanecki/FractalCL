@@ -34,7 +34,8 @@ Discover and explore fractals world with OpenCL acceleration.
 
 * ESC - exit application
 * i/u - increase/decrease number of calculation's iteriations
-* o/p/k/l/n/m - change color in RGB mode
+* o/p/k/l/n/m - change colors
+* g - show color palettes
 * LEFT/RIGTH - scale horizontally by 0.01
 * UP/DOWN - scale vertically
 * a/d - shift left/right

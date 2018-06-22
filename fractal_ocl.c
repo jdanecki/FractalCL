@@ -304,7 +304,12 @@ void update_gpu_texture()
         }
         else
         {
-            SDL_UpdateTexture(texture, NULL, px1, WIDTH * 4);
+            void* pixels;
+            int pitch;
+            SDL_LockTexture(texture, NULL, &pixels, &pitch);
+            memcpy(pixels, px1, pitch * HEIGHT);
+            SDL_UnlockTexture(texture);
+
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);
             clEnqueueUnmapMemObject(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, px1, 0, NULL, NULL);
         }
