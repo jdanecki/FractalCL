@@ -532,11 +532,19 @@ void show_palette()
 
         for (x = 0; x < 720; x++)
         {
-            int r = (colors[x] & 0xff0000) >> 16;
-            int g = (colors[x] & 0x00ff00) >> 8;
-            int b = colors[x] & 0xff;
+            unsigned int c = colors[x];
+            int r = (c & 0xff0000) >> 16;
+            int g = (c & 0x00ff00) >> 8;
+            int b = c & 0xff;
             SDL_SetRenderDrawColor(main_window, r, g, b, 255);
-            SDL_RenderDrawLine(main_window, x, 0, x, HEIGHT - 40);
+            SDL_RenderDrawLine(main_window, x, 0, x, HEIGHT / 2);
+
+            c |= mm;
+            r = (c & 0xff0000) >> 16;
+            g = (c & 0x00ff00) >> 8;
+            b = c & 0xff;
+            SDL_SetRenderDrawColor(main_window, r, g, b, 255);
+            SDL_RenderDrawLine(main_window, x, HEIGHT / 2, x, HEIGHT - 40);
         }
     }
     SDL_RenderPresent(main_window);
