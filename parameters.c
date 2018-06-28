@@ -66,6 +66,7 @@ unsigned long cpu_execution;
 unsigned long cpu_executions, gpu_executions;
 unsigned long cpu_iter, gpu_iter;
 int color_channel; // r, g, b
+extern int quiet;
 
 int calculate_offsets()
 {
@@ -103,6 +104,7 @@ void clear_counters()
 
 void set_fractal(enum fractals f, int d)
 {
+    if (!quiet) printf("select fractal: %d\n", f);
     fractal = f;
     gws_x = WIDTH / d;
     gws_y = HEIGHT / d;
@@ -111,6 +113,39 @@ void set_fractal(enum fractals f, int d)
     ofs_lx = -1.5f;
     ofs_ty = 1.5f;
     clear_counters();
+}
+
+void select_fractal(int f)
+{
+    switch (f)
+    {
+    case JULIA:
+        set_fractal(JULIA, 4);
+        break;
+    case MANDELBROT:
+        set_fractal(MANDELBROT, 4);
+        break;
+    case JULIA_FULL:
+        set_fractal(JULIA_FULL, 1);
+        break;
+    case DRAGON:
+        set_fractal(DRAGON, 1);
+        max_iter = 10000;
+        er = 0.9f;
+        ofs_lx = 0.0f;
+        ofs_ty = 0.0f;
+        clear_counters();
+        break;
+    case JULIA3:
+        set_fractal(JULIA3, 4);
+        break;
+    case BURNING_SHIP:
+        set_fractal(BURNING_SHIP, 4);
+        break;
+    case GENERALIZED_CELTIC:
+        set_fractal(GENERALIZED_CELTIC, 4);
+        break;
+    }
 }
 
 void dec_int(unsigned int* v, unsigned int by, unsigned int min, int clear)

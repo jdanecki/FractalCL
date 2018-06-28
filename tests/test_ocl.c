@@ -20,6 +20,7 @@
 
 int finish_thread;
 volatile int tasks_finished;
+int quiet;
 
 int execute_fractal(struct ocl_device* dev)
 {

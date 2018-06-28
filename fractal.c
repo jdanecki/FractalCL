@@ -34,7 +34,8 @@
 
 unsigned int* colors;
 void* cpu_pixels;
-
+int quiet;
+int all_devices;
 char status_line[200];
 
 int draw_frames = 16;
@@ -47,6 +48,7 @@ extern volatile int tasks_finished;
 
 int performance_test;
 unsigned long last_avg_result;
+int console_mode;
 
 enum app_modes
 {
@@ -378,6 +380,28 @@ void start_cpu()
     cpu_execution = tp2 - tp1;
 }
 
+unsigned long calculate_avg_time(unsigned long* exec_time)
+{
+    unsigned long avg;
+#ifdef OPENCL_SUPPORT
+    if (cur_dev)
+    {
+        *exec_time = ocl_devices[current_device].execution;
+        avg = gpu_iter ? gpu_executions / gpu_iter : 0;
+    }
+    else
+    {
+        *exec_time = cpu_execution;
+        avg = cpu_iter ? cpu_executions / cpu_iter : 0;
+    }
+
+#else
+    *exec_time = cpu_execution;
+    avg = cpu_iter ? cpu_executions / cpu_iter : 0;
+#endif
+    return avg;
+}
+
 void draw_right_panel(int column)
 {
     int raw = 0;
@@ -429,22 +453,8 @@ void draw_right_panel(int column)
     raw++;
     draw_string(raw++, "SPACE", " Benchmarking [us]");
     draw_long(raw++, "time", frames_time / draw_frames);
-#ifdef OPENCL_SUPPORT
-    if (cur_dev)
-    {
-        exec_time = ocl_devices[current_device].execution;
-        avg = gpu_iter ? gpu_executions / gpu_iter : 0;
-    }
-    else
-    {
-        exec_time = cpu_execution;
-        avg = cpu_iter ? cpu_executions / cpu_iter : 0;
-    }
+    avg = calculate_avg_time(&exec_time);
 
-#else
-    exec_time = cpu_execution;
-    avg = cpu_iter ? cpu_executions / cpu_iter : 0;
-#endif
     draw_2long(raw++, "exec", exec_time, "avg", avg);
     last_avg_result = avg;
     r_avg = flips ? render_times / flips : 0;
@@ -585,7 +595,22 @@ void prepare_frames()
     }
 }
 
-void run_program(enum app_modes app_mode, int device)
+void show_perf_result()
+{
+    puts("***********************************************************");
+#ifdef OPENCL_SUPPORT
+    if (cur_dev)
+    {
+        show_ocl_device(current_device);
+    }
+#endif
+
+    printf("--- performance results --- \n");
+    printf("avg exec time: %lu [us]\n", last_avg_result);
+    puts("***********************************************************");
+}
+
+void gui_loop()
 {
     SDL_Event event;
     int button;
@@ -595,32 +620,9 @@ void run_program(enum app_modes app_mode, int device)
     int flip_window = 0;
     double m1x, m1y;
     int draw = 1;
-    SDL_Rect window_rec;
     int column = 0;
 
-#ifdef OPENCL_SUPPORT
-    if (init_ocl())
-    {
-        printf("OpenCL device not found, using CPU only\n");
-    }
-    else
-    {
-        if (app_mode == APP_DISC)
-        {
-            int d;
-            for (d = 0; d < nr_devices; d++)
-            {
-                printf("%d: %s\n", d, ocl_devices[d].name);
-            }
-            return;
-        }
-        cur_dev = 1; // use first OCL device
-        if (device >= 0 && device < nr_devices) current_device = device;
-        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
-        if (pthread_mutex_init(&lock_fin, NULL)) return;
-        if (pthread_cond_init(&cond_fin, NULL)) return;
-    }
-#endif
+    SDL_Rect window_rec;
 
     init_window();
 
@@ -629,9 +631,6 @@ void run_program(enum app_modes app_mode, int device)
     window_rec.x = 0;
     window_rec.y = 0;
 
-    if (initialize_colors()) return;
-
-    if (posix_memalign((void**)&cpu_pixels, 4096, IMAGE_SIZE)) return;
     while (1)
     {
         if (animate || key)
@@ -728,14 +727,14 @@ void run_program(enum app_modes app_mode, int device)
 
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) goto finish;
+            if (event.type == SDL_QUIT) return;
             if (event.type == SDL_KEYDOWN)
             {
                 int kl = event.key.keysym.sym;
                 switch (kl)
                 {
                 case 27:
-                    goto finish;
+                    return;
                 case 'u':
                     dec_int(&max_iter, 1, 1, 1);
                     break;
@@ -851,33 +850,28 @@ void run_program(enum app_modes app_mode, int device)
                     c_y += 0.001;
                     break;
                 case SDLK_F1:
-                    set_fractal(JULIA, 4);
+                    select_fractal(JULIA);
                     break;
                 case SDLK_F2:
-                    set_fractal(MANDELBROT, 4);
+                    select_fractal(MANDELBROT);
                     break;
                 case SDLK_F3:
-                    set_fractal(JULIA_FULL, 1);
+                    select_fractal(JULIA_FULL);
                     break;
                 case SDLK_F4:
-                    set_fractal(DRAGON, 1);
-                    max_iter = 10000;
-                    er = 0.9f;
-                    ofs_lx = 0.0f;
-                    ofs_ty = 0.0f;
+                    select_fractal(DRAGON);
 #ifdef OPENCL_SUPPORT
                     clear_pixels_ocl();
 #endif
-                    clear_counters();
                     break;
                 case SDLK_F5:
-                    set_fractal(JULIA3, 4);
+                    select_fractal(JULIA3);
                     break;
                 case SDLK_F6:
-                    set_fractal(BURNING_SHIP, 4);
+                    select_fractal(BURNING_SHIP);
                     break;
                 case SDLK_F7:
-                    set_fractal(GENERALIZED_CELTIC, 4);
+                    select_fractal(GENERALIZED_CELTIC);
                     break;
 
 #ifdef OPENCL_SUPPORT
@@ -906,13 +900,7 @@ void run_program(enum app_modes app_mode, int device)
                     }
                     else
                     {
-                        printf("performance result for %s = %lu\n",
-#ifdef OPENCL_SUPPORT
-                               cur_dev ? ocl_devices[current_device].name : "CPU",
-#else
-                               "CPU",
-#endif
-                               last_avg_result);
+                        show_perf_result();
                     }
                     break;
                 }
@@ -995,7 +983,69 @@ void run_program(enum app_modes app_mode, int device)
             }
         }
     }
-finish:
+}
+
+void run_test()
+{
+    unsigned long exec_time;
+    printf("starting performance test with %u iterations for device: %d\n", draw_frames, current_device);
+    prepare_frames();
+    last_avg_result = calculate_avg_time(&exec_time);
+    show_perf_result();
+    clear_counters();
+}
+
+void perf_test()
+{
+    int d;
+
+    if (all_devices)
+    {
+        for (d = 0; d < nr_devices; d++)
+        {
+            current_device = d;
+            run_test();
+        }
+    }
+    else
+    {
+        run_test();
+    }
+}
+
+void run_program(enum app_modes app_mode, int device)
+{
+#ifdef OPENCL_SUPPORT
+    if (init_ocl())
+    {
+        printf("OpenCL device not found, using CPU only\n");
+    }
+    else
+    {
+        if (app_mode == APP_DISC)
+        {
+            show_ocl_devices();
+            return;
+        }
+        cur_dev = 1; // use first OCL device
+        if (device >= 0 && device < nr_devices) current_device = device;
+        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
+        if (pthread_mutex_init(&lock_fin, NULL)) return;
+        if (pthread_cond_init(&cond_fin, NULL)) return;
+    }
+#endif
+    if (initialize_colors()) return;
+    if (posix_memalign((void**)&cpu_pixels, 4096, IMAGE_SIZE)) return;
+
+    if (!console_mode)
+    {
+        gui_loop();
+    }
+    else
+    {
+        perf_test();
+    }
+
 #ifdef OPENCL_SUPPORT
     finish_thread = 1;
     if (nr_devices)
@@ -1005,7 +1055,29 @@ finish:
     }
     close_ocl();
 #endif
-    SDL_Quit();
+
+    if (!console_mode) SDL_Quit();
+}
+
+void help()
+{
+    puts("-dn - select n OCL device");
+    puts("-t  - performance test");
+    puts("-l  - list OCL devices");
+    puts("-i  - number of iterations in performance test");
+    puts("-q  - quiet mode - disable logs");
+    puts("-a  - test all OCL devices");
+    puts("-h  - show help");
+    puts("-fn - select n fractal type");
+    puts("where n:");
+    puts("      0 - julia");
+    puts("      1 - mandelbrot");
+    puts("      2 - julia (full)");
+    puts("      3 - dragon");
+    puts("      4 - julia 3");
+    puts("      5 - burning ship");
+    puts("      6 - generalized celtic");
+    exit(0);
 }
 
 int main(int argc, char* argv[])
@@ -1013,8 +1085,10 @@ int main(int argc, char* argv[])
     int opt;
     int device = -1;
     enum app_modes app_mode = APP_GUI;
+    int iter = 32000;
+    int f;
 
-    while ((opt = getopt(argc, argv, "d:tl")) != -1)
+    while ((opt = getopt(argc, argv, "d:tlhi:qaf:")) != -1)
     {
         switch (opt)
         {
@@ -1025,11 +1099,35 @@ int main(int argc, char* argv[])
         case 't':
             app_mode = APP_TEST;
             performance_test = 1;
+            console_mode = 1;
             break;
         case 'l':
             app_mode = APP_DISC;
             break;
+        case 'i':
+            iter = strtoul(optarg, NULL, 0);
+            if (iter < 16) draw_frames = 16;
+            break;
+        case 'h':
+            help();
+            break;
+        case 'q':
+            quiet = 1;
+            break;
+        case 'a':
+            all_devices = 1;
+            break;
+        case 'f':
+            f = strtoul(optarg, NULL, 0);
+            if (f < 0) f = 0;
+            if (f >= NR_FRACTALS) f = 0;
+            select_fractal(f);
+            break;
         }
+    }
+    if (console_mode && app_mode == APP_TEST)
+    {
+        draw_frames = iter;
     }
 
     srandom(time(0));

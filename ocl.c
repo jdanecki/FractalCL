@@ -24,6 +24,7 @@ struct ocl_device* ocl_devices;
 int current_device;
 struct ocl_fractal fractals[NR_FRACTALS];
 struct ocl_fractal test_fractal;
+extern int quiet;
 
 int create_ocl_device(int di, char* plat_name, cl_platform_id id)
 {
@@ -31,7 +32,6 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     unsigned int num;
     struct ocl_device* dev = &ocl_devices[di];
     size_t size;
-    char device_info[4096];
     cl_context_properties prop[3];
 
     if (!strncmp(plat_name, "Intel", 5)) dev->intel = 1;
@@ -40,57 +40,66 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0, NULL, &num);
     if ((err != CL_SUCCESS) || (num != 1))
     {
-        printf("OCL GPU device not found err=%d\n", err);
+        printf("OCL device not found err=%d\n", err);
         return 1;
     }
 
     err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 1, &dev->device_id, NULL);
+
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, 0, NULL, &size);
     if (size > 4095) return 1;
+    dev->name = malloc(size + 1);
 
-    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, size, device_info, NULL);
-    printf("OCL device: %s\n", device_info);
-    memcpy(dev->name, device_info, size);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, size, dev->name, NULL);
+    if (!quiet) printf("OCL device: %s\n", dev->name);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, 0, NULL, &size);
     if (size > 4095) return 1;
-    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, size, device_info, NULL);
-    printf("OCL device vendor: %s\n", device_info);
+    dev->vendor = malloc(size + 1);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, size, dev->vendor, NULL);
+    if (!quiet) printf("OCL device vendor: %s\n", dev->vendor);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
-    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, size, device_info, NULL);
-    printf("OCL device version: %s\n", device_info);
+    dev->device_version = malloc(size + 1);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, size, dev->device_version, NULL);
+    if (!quiet) printf("OCL device version: %s\n", dev->device_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
-    err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, size, device_info, NULL);
-    printf("OCL driver version: %s\n", device_info);
+    dev->driver_version = malloc(size + 1);
+    err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, size, dev->driver_version, NULL);
+    if (!quiet) printf("OCL driver version: %s\n", dev->driver_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
-    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, size, device_info, NULL);
-    printf("OCL C version: %s\n", device_info);
+    dev->ocl_version = malloc(size + 1);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, size, dev->ocl_version, NULL);
+    if (!quiet) printf("OCL C version: %s\n", dev->ocl_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, 0, NULL, &size);
     if (size > 4095) return 1;
-    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, size, device_info, NULL);
-    printf("OCL device extensions: %s\n", device_info);
-    if (strstr(device_info, "cl_khr_fp64"))
+    dev->extensions = malloc(size + 1);
+    err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, size, dev->extensions, NULL);
+    if (!quiet) printf("OCL device extensions: %s\n", dev->extensions);
+    if (strstr(dev->extensions, "cl_khr_fp64"))
     {
 #ifdef FP_64_SUPPORT
-        printf("cl_khr_fp64 supported by device, and enabled in project configuration\n");
+        if (!quiet) printf("cl_khr_fp64 supported by device, and enabled in project configuration\n");
         dev->fp64 = 1;
 #else
-        printf("!!! cl_khr_fp64 supported by device, but disabled in project configuration !!!\n");
-        printf("!!! enable it in configure script !!! \n");
+        if (!quiet)
+        {
+            printf("!!! cl_khr_fp64 supported by device, but disabled in project configuration !!!\n");
+            printf("!!! enable it in configure script !!! \n");
+        }
 #endif
     }
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, 0, NULL, &size);
     if (size > 4095) return 1;
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, size, &dev->type, NULL);
-    printf("OCL device type: %ld\n", dev->type);
+    if (!quiet) printf("OCL device type: %ld\n", dev->type);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &dev->eu, NULL);
     if (err != CL_SUCCESS)
@@ -98,7 +107,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
         printf("clGetDeviceInfo CL_DEVICE_MAX_COMPUTE_UNITS returned %d\n", err);
         return 1;
     }
-    printf("MAX_COMPUTE_UNITS=%u\n", dev->eu);
+    if (!quiet) printf("MAX_COMPUTE_UNITS=%u\n", dev->eu);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &dev->wgs, NULL);
     if (err != CL_SUCCESS)
@@ -106,7 +115,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
         printf("clGetDeviceInfo CL_DEVICE_MAX_WORK_GROUP_SIZE returned %d\n", err);
         return 1;
     }
-    printf("MAX_WORKGROUP_SIZE=%lu\n", dev->wgs);
+    if (!quiet) printf("MAX_WORKGROUP_SIZE=%lu\n", dev->wgs);
 
     prop[0] = CL_CONTEXT_PLATFORM;
     prop[1] = (cl_context_properties)id;
@@ -143,8 +152,11 @@ int create_kernel(struct ocl_device* dev, struct ocl_fractal* fractal, cl_kernel
     }
     else
     {
-        printf("%s: PREFERRED_WORK_GROUP_SIZE_MULTIPLE=%lu\n", name, param1);
-        if (dev->intel) printf("threads=%lu\n", param1 * 7 * dev->eu);
+        if (!quiet)
+        {
+            printf("%s: PREFERRED_WORK_GROUP_SIZE_MULTIPLE=%lu\n", name, param1);
+            if (dev->intel) printf("threads=%lu\n", param1 * 7 * dev->eu);
+        }
     }
     if (!dev->pocl)
     {
@@ -155,7 +167,7 @@ int create_kernel(struct ocl_device* dev, struct ocl_fractal* fractal, cl_kernel
         }
         else
         {
-            printf("%s: PRIVATE_MEM=%lu\n", name, param2);
+            if (!quiet) printf("%s: PRIVATE_MEM=%lu\n", name, param2);
         }
     }
     return 0;
@@ -172,13 +184,13 @@ int create_kernels(struct ocl_device* dev, char* options)
     size_t filesizes[NR_FRACTALS + 1];
     if (!dev->initialized) return 0;
 
-    printf("prepare kernels for %s\n", dev->name);
+    if (!quiet) printf("prepare kernels for %s\n", dev->name);
 
     for (i = 0; i < NR_FRACTALS; i++)
     {
         sources[i] = fractals[i].source;
         filesizes[i] = fractals[i].filesize;
-        printf("preparing kernel%d]: %s\n", i, fractals[i].name);
+        if (!quiet) printf("preparing kernel%d]: %s\n", i, fractals[i].name);
     }
     sources[i] = test_fractal.source;
     filesizes[i] = test_fractal.filesize;
@@ -192,15 +204,15 @@ int create_kernels(struct ocl_device* dev, char* options)
         printf("%s: clCreateProgramWithSource returned %d\n", dev->name, err);
         return 1;
     }
-    printf("compiling kernels with %s\n", cl_options);
+    if (!quiet) printf("compiling kernels with %s\n", cl_options);
     err = clBuildProgram(dev->program, 1, &dev->device_id, cl_options, NULL, NULL);
-    printf("%s: clBuildProgram returned %d\n", dev->name, err);
+    if (!quiet) printf("%s: clBuildProgram returned %d\n", dev->name, err);
 
-    printf("%s: ------ compilation log  -----------\n", dev->name);
+    if (!quiet) printf("%s: ------ compilation log  -----------\n", dev->name);
     clGetProgramBuildInfo(dev->program, dev->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &size);
     log = calloc(1, size);
     clGetProgramBuildInfo(dev->program, dev->device_id, CL_PROGRAM_BUILD_LOG, size, log, NULL);
-    printf("%s\n", log);
+    if (!quiet) printf("%s\n", log);
     free(log);
 
     if (err != CL_SUCCESS)
@@ -225,7 +237,7 @@ int create_kernels(struct ocl_device* dev, char* options)
 
     if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
 
-    printf("------------------------------------------\n");
+    if (!quiet) printf("------------------------------------------\n");
     return 0;
 }
 
@@ -266,7 +278,7 @@ int init_ocl()
         printf("clGetPlatformIDs returned %d\n", err);
         return 1;
     }
-    printf("found %d platforms\n", nr_platforms);
+    if (!quiet) printf("found %d platforms\n", nr_platforms);
     if (nr_platforms < 1)
     {
         printf("OCL platforms not found\n");
@@ -291,7 +303,7 @@ int init_ocl()
             goto deallocate_return;
         }
         err = clGetPlatformInfo(platforms_ids[i], CL_PLATFORM_NAME, size, name, NULL);
-        printf("--- platform: %s\n", name);
+        if (!quiet) printf("--- platform: %s\n", name);
         if (create_ocl_device(i, name, platforms_ids[i]))
         {
             err = 1;
@@ -365,4 +377,27 @@ int close_ocl()
     }
     close_fractal(&test_fractal);
     return 0;
+}
+
+void show_ocl_device(int d)
+{
+    struct ocl_device* dev = &ocl_devices[d];
+    printf("name:           %s\n", dev->name);
+    printf("vendor:         %s\n", dev->vendor);
+    printf("device version: %s\n", dev->device_version);
+    printf("driver version: %s\n", dev->driver_version);
+    printf("ocl C version:  %s\n", dev->ocl_version);
+    printf("type:           %s\n", dev->type == 4 ? "GPU" : dev->type == 2 ? "CPU" : "other");
+    printf("extensions:     %s\n", dev->extensions);
+}
+
+void show_ocl_devices()
+{
+    int d;
+    for (d = 0; d < nr_devices; d++)
+    {
+        printf("%d:\n", d);
+        show_ocl_device(d);
+        puts("---------------------------------------------------------");
+    }
 }

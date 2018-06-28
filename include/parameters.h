@@ -55,7 +55,7 @@ extern unsigned long cpu_iter, gpu_iter;
 extern int color_channel;
 
 int calculate_offsets();
-void set_fractal(enum fractals f, int d);
+void select_fractal(int f);
 void clear_counters();
 void dec_int(unsigned int* v, unsigned int by, unsigned int min, int clear);
 void inc_int(unsigned int* v, unsigned int by, int clear);

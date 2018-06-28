@@ -25,6 +25,8 @@ pthread_mutex_t lock_fin;
 volatile int tasks_finished;
 
 extern unsigned int* colors;
+extern int quiet;
+
 int prepare_pixels(struct ocl_device* dev)
 {
     int err;
@@ -39,7 +41,7 @@ int prepare_pixels(struct ocl_device* dev)
         printf("clCreateBuffer pixels returned %d\n", err);
         return 1;
     }
-    printf("OCL buffer created with size=%d\n", IMAGE_SIZE);
+    if (!quiet) printf("OCL buffer created with size=%d\n", IMAGE_SIZE);
     return 0;
 }
 
@@ -220,7 +222,7 @@ void* ocl_kernel(void* d)
         {
             if (finish_thread)
             {
-                printf("%s: thread exits\n", dev->name);
+                if (!quiet) printf("%s: thread exits\n", dev->name);
                 return NULL;
             }
             pthread_cond_wait(&t->cond, &t->lock);
@@ -246,8 +248,7 @@ void* ocl_kernel(void* d)
         pthread_cond_broadcast(&cond_fin);
         pthread_mutex_unlock(&lock_fin);
     }
-    printf("%s: thread exits\n", dev->name);
-    sleep(1);
+    if (!quiet) printf("%s: thread exits\n", dev->name);
     return NULL;
 }
 
@@ -338,9 +339,7 @@ void clear_pixels_ocl()
                                  0, NULL, NULL, &err);
         if (err != CL_SUCCESS)
         {
-            printf("clEnqueueMapBuffer "
-                   "error %d\n",
-                   err);
+            printf("clEnqueueMapBuffer error %d\n", err);
         }
         else
         {
