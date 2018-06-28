@@ -985,6 +985,7 @@ void gui_loop()
     }
 }
 
+#ifdef OPENCL_SUPPORT
 void run_test()
 {
     unsigned long exec_time;
@@ -1012,6 +1013,7 @@ void perf_test()
         run_test();
     }
 }
+#endif
 
 void run_program(enum app_modes app_mode, int device)
 {
@@ -1041,12 +1043,12 @@ void run_program(enum app_modes app_mode, int device)
     {
         gui_loop();
     }
+#ifdef OPENCL_SUPPORT
     else
     {
         perf_test();
     }
 
-#ifdef OPENCL_SUPPORT
     finish_thread = 1;
     if (nr_devices)
     {
@@ -1061,12 +1063,14 @@ void run_program(enum app_modes app_mode, int device)
 
 void help()
 {
+#ifdef OPENCL_SUPPORT
     puts("-dn - select n OCL device");
     puts("-t  - performance test");
     puts("-l  - list OCL devices");
     puts("-i  - number of iterations in performance test");
-    puts("-q  - quiet mode - disable logs");
     puts("-a  - test all OCL devices");
+#endif
+    puts("-q  - quiet mode - disable logs");
     puts("-h  - show help");
     puts("-fn - select n fractal type");
     puts("where n:");
@@ -1085,13 +1089,17 @@ int main(int argc, char* argv[])
     int opt;
     int device = -1;
     enum app_modes app_mode = APP_GUI;
-    int iter = 32000;
     int f;
-
+#ifdef OPENCL_SUPPORT
+    int iter = 32000;
     while ((opt = getopt(argc, argv, "d:tlhi:qaf:")) != -1)
+#else
+    while ((opt = getopt(argc, argv, "hqf:")) != -1)
+#endif
     {
         switch (opt)
         {
+#ifdef OPENCL_SUPPORT
         case 'd':
             device = strtoul(optarg, NULL, 0);
             printf("selected device: %d\n", device);
@@ -1108,14 +1116,15 @@ int main(int argc, char* argv[])
             iter = strtoul(optarg, NULL, 0);
             if (iter < 16) draw_frames = 16;
             break;
+        case 'a':
+            all_devices = 1;
+            break;
+#endif
         case 'h':
             help();
             break;
         case 'q':
             quiet = 1;
-            break;
-        case 'a':
-            all_devices = 1;
             break;
         case 'f':
             f = strtoul(optarg, NULL, 0);
@@ -1125,11 +1134,12 @@ int main(int argc, char* argv[])
             break;
         }
     }
+#ifdef OPENCL_SUPPORT
     if (console_mode && app_mode == APP_TEST)
     {
         draw_frames = iter;
     }
-
+#endif
     srandom(time(0));
 
     run_program(app_mode, device);
