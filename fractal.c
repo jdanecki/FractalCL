@@ -48,6 +48,13 @@ extern volatile int tasks_finished;
 int performance_test;
 unsigned long last_avg_result;
 
+enum app_modes
+{
+    APP_GUI,  // default GUI support
+    APP_TEST, // performance test
+    APP_DISC, // discovery mode, show devices
+};
+
 #define MAX(a, b) (a > b) ? a : b
 #define MIN(a, b) (a < b) ? a : b
 
@@ -578,7 +585,7 @@ void prepare_frames()
     }
 }
 
-void run_program()
+void run_program(enum app_modes app_mode, int device)
 {
     SDL_Event event;
     int button;
@@ -598,12 +605,23 @@ void run_program()
     }
     else
     {
-        cur_dev = 1;
+        if (app_mode == APP_DISC)
+        {
+            int d;
+            for (d = 0; d < nr_devices; d++)
+            {
+                printf("%d: %s\n", d, ocl_devices[d].name);
+            }
+            return;
+        }
+        cur_dev = 1; // use first OCL device
+        if (device >= 0 && device < nr_devices) current_device = device;
         iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
         if (pthread_mutex_init(&lock_fin, NULL)) return;
         if (pthread_cond_init(&cond_fin, NULL)) return;
     }
 #endif
+
     init_window();
 
     window_rec.w = WIDTH;
@@ -990,10 +1008,32 @@ finish:
     SDL_Quit();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    int opt;
+    int device = -1;
+    enum app_modes app_mode = APP_GUI;
+
+    while ((opt = getopt(argc, argv, "d:tl")) != -1)
+    {
+        switch (opt)
+        {
+        case 'd':
+            device = strtoul(optarg, NULL, 0);
+            printf("selected device: %d\n", device);
+            break;
+        case 't':
+            app_mode = APP_TEST;
+            performance_test = 1;
+            break;
+        case 'l':
+            app_mode = APP_DISC;
+            break;
+        }
+    }
+
     srandom(time(0));
 
-    run_program();
+    run_program(app_mode, device);
     return 0;
 }
