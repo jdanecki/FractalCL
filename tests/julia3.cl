@@ -1,1 +1,0 @@
-../kernels/julia3.cl

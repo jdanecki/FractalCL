@@ -1,1 +1,0 @@
-../kernels/dragon.cl

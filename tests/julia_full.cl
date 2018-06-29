@@ -1,1 +1,0 @@
-../kernels/julia_full.cl

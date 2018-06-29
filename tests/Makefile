@@ -34,10 +34,10 @@ endif
 all: ocl sdl complex
 
 ocl: ../ocl.c test_ocl.c Makefile
-	gcc -o test_$@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl 
+	gcc -o test_$@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
 
 sdl: ../gui.c test_sdl.c Makefile
-	gcc -o test_$@ test_sdl.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl
+	gcc -o test_$@ test_sdl.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
 complex: test_complex.c Makefile
 	gcc -o test_$@ test_complex.c $(CFLAGS)

@@ -16,6 +16,7 @@
 */
 
 #include "gui.h"
+#include "fractal_ocl.h"
 
 const char* font_file = "FreeMono.ttf";
 TTF_Font* font;
@@ -25,16 +26,18 @@ SDL_Texture* texture;
 
 void init_font()
 {
+    char p[256];
     if (TTF_Init() == -1)
     {
         printf("TTF_Init: %s\n", TTF_GetError());
         exit(0);
     }
 
-    font = TTF_OpenFont(font_file, FONT_SIZE);
+    sprintf(p, "%s/%s", STRING_MACRO(DATA_PATH), font_file);
+    font = TTF_OpenFont(p, FONT_SIZE);
     if (font == NULL)
     {
-        printf("TTF_OpenFont(%s) : %s\n", font_file, TTF_GetError());
+        printf("TTF_OpenFont(%s) : %s\n", p, TTF_GetError());
         exit(0);
     }
 }

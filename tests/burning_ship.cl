@@ -1,1 +1,0 @@
-../kernels/burning_ship.cl

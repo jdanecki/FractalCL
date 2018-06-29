@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION=0.0.1
+
 #support for fp64 extention is enabled by default
 #float will be used if device doesn't support cl_khr_fp64
 FP_64_SUPPORT=ON
@@ -13,11 +15,21 @@ SDL_ACCELERATED=OFF
 
 #Use OpenCL to accelerate calculation, enabled by default
 OPENCL_SUPPORT=ON
+	
+PREFIX=/usr
+LSB=$(which lsb_release)
+
+if [ -n "${LSB}" ]
+then
+	DISTRIBUTION="`lsb_release -is`"
+	if [ "${DISTRIBUTION}" = "KaNaPi" ]
+	then
+		PREFIX=/kanapi_0.10/packages/FractalCL-${VERSION}
+	fi
+fi
 
 mkdir -p build
 cd build
-cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} -DSDL_ACCELERATED=${SDL_ACCELERATED} -DOPENCL_SUPPORT=${OPENCL_SUPPORT} ..
-
-ln -sf ../kernels/*.cl .
-ln -sf ../*.ttf .
+cmake -DFP_64_SUPPORT=${FP_64_SUPPORT} -DSDL_ACCELERATED=${SDL_ACCELERATED} -DOPENCL_SUPPORT=${OPENCL_SUPPORT} \
+	 -DCMAKE_INSTALL_PREFIX=${PREFIX} -DVERSION=${VERSION} ..
 

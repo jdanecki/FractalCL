@@ -244,15 +244,15 @@ int create_kernels(struct ocl_device* dev, char* options)
 void open_fractal(struct ocl_fractal* fractal, char* name)
 {
     struct stat fileinfo;
-    char filename[80];
+    char filename[256];
 
     fractal->name = name;
 
-    sprintf(filename, "%s.cl", name);
+    sprintf(filename, "%s/kernels/%s.cl", STRING_MACRO(DATA_PATH), name);
     stat(filename, &fileinfo);
     fractal->filesize = fileinfo.st_size;
     fractal->fd = open(filename, O_RDONLY);
-    if (fractal->fd == -1) printf("open: %s\n", strerror(errno));
+    if (fractal->fd == -1) printf("Can't open %s: %s\n", filename, strerror(errno));
 
     fractal->source = mmap(NULL, fractal->filesize, PROT_READ, MAP_PRIVATE, fractal->fd, 0);
     if (fractal->source == MAP_FAILED) printf("mmap: %s\n", strerror(errno));

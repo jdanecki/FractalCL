@@ -1072,6 +1072,7 @@ void help()
 #endif
     puts("-q  - quiet mode - disable logs");
     puts("-h  - show help");
+    puts("-v  - show version");
     puts("-fn - select n fractal type");
     puts("where n:");
     puts("      0 - julia");
@@ -1092,7 +1093,7 @@ int main(int argc, char* argv[])
     int f;
 #ifdef OPENCL_SUPPORT
     int iter = 32000;
-    while ((opt = getopt(argc, argv, "d:tlhi:qaf:")) != -1)
+    while ((opt = getopt(argc, argv, "d:tlhi:qaf:v")) != -1)
 #else
     while ((opt = getopt(argc, argv, "hqf:")) != -1)
 #endif
@@ -1132,6 +1133,9 @@ int main(int argc, char* argv[])
             if (f >= NR_FRACTALS) f = 0;
             select_fractal(f);
             break;
+        case 'v':
+            printf("FractalCL version: %s\n", STRING_MACRO(VERSION));
+            return 0;
         }
     }
 #ifdef OPENCL_SUPPORT

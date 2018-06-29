@@ -1,4 +1,4 @@
-# FractalCL
+# FractalCL v0.0.1
 
 Discover and explore fractals world with OpenCL acceleration.
 
@@ -113,20 +113,22 @@ y1 = 0.4 * xc + 0.76 * yc;
 * SDL2, SDL2_TTF libraries
 * OpenCL library (optional)
 
-# Build instruction
+# Build and install instruction
 
-* Run configure script to configure project
-* Run make to build project
+* Run 'configure' script to configure project
+* Run 'make' to build project
+* Run 'make install' to install application
 
 # Build configuration (configure script)
 
 * FP_64_SUPPORT - Use fp64 extension [ON/OFF] (default ON)
 * SDL_ACCELERATED - "Use SDL with GPU acceleration [ON/OFF] (default OFF)
 * OPENCL_SUPPORT - Use OpenCL acceleration [ON/OFF] (default ON)
+* PREFIX - directory where program will be installed
 
 # Run instruction
 
-* Execute FractalCL application in build directory. Use mouse and keyboard to change fractals parameters.
+* Execute 'FractalCL' application. Use mouse and keyboard to change fractals parameters.
 * Press ESC key to exit application.
 
 # Tests (directory tests)

@@ -26,7 +26,7 @@ pkg_check_modules(SDL_TTF SDL2_ttf)
 
 include_directories(include)
 
-add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP)
+add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP -DDATA_PATH=${CMAKE_INSTALL_PREFIX}/share/FractalCL -DVERSION=${VERSION})
 
 if(FP_64_SUPPORT)
     add_definitions("-DFP_64_SUPPORT=1")
@@ -37,7 +37,7 @@ if(SDL_ACCELERATED)
 endif()
 
 if(OPENCL_SUPPORT)
-    add_definitions("-DOPENCL_SUPPORT=1")
+	add_definitions("-DOPENCL_SUPPORT=1")
     find_package(OpenCL REQUIRED)
     set(OPTIONAL_LIBRARIES ${OpenCL_LIBRARY})
     set(OPTIONAL_SOURCES
@@ -46,8 +46,6 @@ if(OPENCL_SUPPORT)
         include/fractal_ocl.h
         )
 endif()
-
-
 
 add_executable(FractalCL
     fractal.c
@@ -66,4 +64,21 @@ target_link_libraries(FractalCL
     ${OPTIONAL_LIBRARIES} 
     -lm -lpthread
 )
+
+install(PROGRAMS
+	${FractalCL_BINARY_DIR}/FractalCL
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+
+install(DIRECTORY
+	kernels
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
+)
+
+install(FILES
+	FreeMono.ttf
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
+)
+message(STATUS "Installation dir: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Data dir: ${CMAKE_INSTALL_PREFIX}/share/FractalCL")
 
