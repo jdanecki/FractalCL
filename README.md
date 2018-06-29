@@ -15,6 +15,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * OpenCL kernels can be executed on CPU without OpenCL libraries
 * fp64 support checked at runtime, can be disabled in configuration (configure script)
 * Suppport multiple OpenCL platforms/devices
+* Performance tests
 
 # Tested Linux OpenCL implementations
 
@@ -54,7 +55,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * F7 - select generalized celtic
 * v - change device used for calculation:
       0 = CPU
-      1,..., n = OCL device
+      1,..., n = OpenCL device
 * 1 - show calculated complex number
 * 2 - multiply gws (global workgroup size) by 2
 * 3 - divide gws (global workgroup size) by 2
@@ -129,7 +130,30 @@ y1 = 0.4 * xc + 0.76 * yc;
 # Run instruction
 
 * Execute 'FractalCL' application. Use mouse and keyboard to change fractals parameters.
+* Use keys shown on right panel.
 * Press ESC key to exit application.
+* Application can be executed with few command line parameters
+```
+FractalCL -h
+-dn - select n OpenCL device
+-c  - run performance test on CPU
+-l  - list OpenCL devices
+-a  - test all OpenCL devices
+-t  - run performance test
+-i  - number of iterations in performance test
+-q  - quiet mode - disable logs
+-h  - show help
+-v  - show version
+-fn - select n fractal type
+where n:
+      0 - julia
+      1 - mandelbrot
+      2 - julia (full)
+      3 - dragon
+      4 - julia 3
+      5 - burning ship
+      6 - generalized celtic
+```
 
 # Tests (directory tests)
 

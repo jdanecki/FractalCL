@@ -40,7 +40,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     err = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0, NULL, &num);
     if ((err != CL_SUCCESS) || (num != 1))
     {
-        printf("OCL device not found err=%d\n", err);
+        printf("OpenCL device not found err=%d\n", err);
         return 1;
     }
 
@@ -51,37 +51,37 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     dev->name = malloc(size + 1);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_NAME, size, dev->name, NULL);
-    if (!quiet) printf("OCL device: %s\n", dev->name);
+    if (!quiet) printf("OpenCL device: %s\n", dev->name);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, 0, NULL, &size);
     if (size > 4095) return 1;
     dev->vendor = malloc(size + 1);
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VENDOR, size, dev->vendor, NULL);
-    if (!quiet) printf("OCL device vendor: %s\n", dev->vendor);
+    if (!quiet) printf("OpenCL device vendor: %s\n", dev->vendor);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
     dev->device_version = malloc(size + 1);
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_VERSION, size, dev->device_version, NULL);
-    if (!quiet) printf("OCL device version: %s\n", dev->device_version);
+    if (!quiet) printf("OpenCL device version: %s\n", dev->device_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
     dev->driver_version = malloc(size + 1);
     err = clGetDeviceInfo(dev->device_id, CL_DRIVER_VERSION, size, dev->driver_version, NULL);
-    if (!quiet) printf("OCL driver version: %s\n", dev->driver_version);
+    if (!quiet) printf("OpenCL driver version: %s\n", dev->driver_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &size);
     if (size > 4095) return 1;
     dev->ocl_version = malloc(size + 1);
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_OPENCL_C_VERSION, size, dev->ocl_version, NULL);
-    if (!quiet) printf("OCL C version: %s\n", dev->ocl_version);
+    if (!quiet) printf("OpenCL C version: %s\n", dev->ocl_version);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, 0, NULL, &size);
     if (size > 4095) return 1;
     dev->extensions = malloc(size + 1);
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_EXTENSIONS, size, dev->extensions, NULL);
-    if (!quiet) printf("OCL device extensions: %s\n", dev->extensions);
+    if (!quiet) printf("OpenCL device extensions: %s\n", dev->extensions);
     if (strstr(dev->extensions, "cl_khr_fp64"))
     {
 #ifdef FP_64_SUPPORT
@@ -99,7 +99,7 @@ int create_ocl_device(int di, char* plat_name, cl_platform_id id)
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, 0, NULL, &size);
     if (size > 4095) return 1;
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_TYPE, size, &dev->type, NULL);
-    if (!quiet) printf("OCL device type: %ld\n", dev->type);
+    if (!quiet) printf("OpenCL device type: %ld\n", dev->type);
 
     err = clGetDeviceInfo(dev->device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &dev->eu, NULL);
     if (err != CL_SUCCESS)
@@ -281,7 +281,7 @@ int init_ocl()
     if (!quiet) printf("found %d platforms\n", nr_platforms);
     if (nr_platforms < 1)
     {
-        printf("OCL platforms not found\n");
+        printf("OpenCL platforms not found\n");
         return 1;
     }
     platforms_ids = malloc(nr_platforms * sizeof(cl_platform_id));

@@ -1088,12 +1088,12 @@ void run_program(enum app_modes app_mode, int device)
 void help()
 {
 #ifdef OPENCL_SUPPORT
-    puts("-dn - select n OCL device");
+    puts("-dn - select n OpenCL device");
     puts("-c  - run performance test on CPU");
-    puts("-l  - list OCL devices");
-    puts("-a  - test all OCL devices");
+    puts("-l  - list OpenCL devices");
+    puts("-a  - test all OpenCL devices");
 #endif
-    puts("-t  - run performance test");
+    puts("-t  - run performance test on GPU/CPU");
     puts("-i  - number of iterations in performance test");
     puts("-q  - quiet mode - disable logs");
     puts("-h  - show help");
