@@ -11,10 +11,15 @@ matrix:
           script:
               - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=OFF .
               - make
+              - make install
+              - FractalCL -t -i 1000
         - os: linux
           env: OPENCL=ON
           script:
               - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=ON .
               - make
+              - make install
+              - FractalCL -c -i 1000
               - make -C tests
+
 

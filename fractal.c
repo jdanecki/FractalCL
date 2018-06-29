@@ -1093,7 +1093,7 @@ void help()
     puts("-l  - list OCL devices");
     puts("-a  - test all OCL devices");
 #endif
-    puts("-t  - performance test on OCL device");
+    puts("-t  - run performance test");
     puts("-i  - number of iterations in performance test");
     puts("-q  - quiet mode - disable logs");
     puts("-h  - show help");
