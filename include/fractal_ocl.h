@@ -15,10 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <CL/cl.h>
-#define STRING(VALUE) #VALUE
-#define STRING_MACRO(MACRO) STRING(MACRO)
 #include "fractal.h"
+#include <CL/cl.h>
 
 struct kernel_args
 {

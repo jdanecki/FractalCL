@@ -1095,7 +1095,7 @@ int main(int argc, char* argv[])
     int iter = 32000;
     while ((opt = getopt(argc, argv, "d:tlhi:qaf:v")) != -1)
 #else
-    while ((opt = getopt(argc, argv, "hqf:")) != -1)
+    while ((opt = getopt(argc, argv, "hqf:v")) != -1)
 #endif
     {
         switch (opt)

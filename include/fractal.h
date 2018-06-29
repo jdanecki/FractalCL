@@ -42,4 +42,7 @@ enum fractals
     NR_FRACTALS
 };
 
+#define STRING(VALUE) #VALUE
+#define STRING_MACRO(MACRO) STRING(MACRO)
+
 #endif
