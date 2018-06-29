@@ -985,11 +985,19 @@ void gui_loop()
     }
 }
 
-#ifdef OPENCL_SUPPORT
 void run_test()
 {
     unsigned long exec_time;
-    printf("starting performance test with %u iterations for device: %d\n", draw_frames, current_device);
+#ifdef OPENCL_SUPPORT
+    if (cur_dev)
+    {
+        printf("starting performance test with %u iterations for device: %d\n", draw_frames, current_device);
+    }
+    else
+#endif
+    {
+        printf("starting performance test with %u iterations on CPU\n", draw_frames);
+    }
     prepare_frames();
     last_avg_result = calculate_avg_time(&exec_time);
     show_perf_result();
@@ -998,6 +1006,7 @@ void run_test()
 
 void perf_test()
 {
+#ifdef OPENCL_SUPPORT
     int d;
 
     if (all_devices)
@@ -1009,11 +1018,11 @@ void perf_test()
         }
     }
     else
+#endif
     {
         run_test();
     }
 }
-#endif
 
 void run_program(enum app_modes app_mode, int device)
 {
@@ -1029,8 +1038,24 @@ void run_program(enum app_modes app_mode, int device)
             show_ocl_devices();
             return;
         }
-        cur_dev = 1; // use first OCL device
-        if (device >= 0 && device < nr_devices) current_device = device;
+        if (app_mode == APP_TEST)
+        {
+            if (device == -2)
+            {
+                cur_dev = 0;
+                current_device = 0;
+            }
+            else
+            {
+                cur_dev = 1; // use first OCL device
+                if (device >= 0 && device < nr_devices) current_device = device;
+            }
+        }
+        else
+        {
+            cur_dev = 1; // use first OCL device
+            if (device >= 0 && device < nr_devices) current_device = device;
+        }
         iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
         if (pthread_mutex_init(&lock_fin, NULL)) return;
         if (pthread_cond_init(&cond_fin, NULL)) return;
@@ -1043,12 +1068,11 @@ void run_program(enum app_modes app_mode, int device)
     {
         gui_loop();
     }
-#ifdef OPENCL_SUPPORT
     else
     {
         perf_test();
     }
-
+#ifdef OPENCL_SUPPORT
     finish_thread = 1;
     if (nr_devices)
     {
@@ -1065,11 +1089,12 @@ void help()
 {
 #ifdef OPENCL_SUPPORT
     puts("-dn - select n OCL device");
-    puts("-t  - performance test");
+    puts("-c  - run performance test on CPU");
     puts("-l  - list OCL devices");
-    puts("-i  - number of iterations in performance test");
     puts("-a  - test all OCL devices");
 #endif
+    puts("-t  - performance test on OCL device");
+    puts("-i  - number of iterations in performance test");
     puts("-q  - quiet mode - disable logs");
     puts("-h  - show help");
     puts("-v  - show version");
@@ -1091,36 +1116,52 @@ int main(int argc, char* argv[])
     int device = -1;
     enum app_modes app_mode = APP_GUI;
     int f;
-#ifdef OPENCL_SUPPORT
     int iter = 32000;
-    while ((opt = getopt(argc, argv, "d:tlhi:qaf:v")) != -1)
+#ifdef OPENCL_SUPPORT
+    while ((opt = getopt(argc, argv, "d:tlhi:qaf:vc")) != -1)
 #else
-    while ((opt = getopt(argc, argv, "hqf:v")) != -1)
+    while ((opt = getopt(argc, argv, "thi:qf:v")) != -1)
 #endif
     {
         switch (opt)
         {
 #ifdef OPENCL_SUPPORT
         case 'd':
+            if (device == -2)
+            {
+                puts("can't use -d and -c together");
+                return 1;
+            }
             device = strtoul(optarg, NULL, 0);
             printf("selected device: %d\n", device);
             break;
+        case 'l':
+            app_mode = APP_DISC;
+            break;
+        case 'a':
+            all_devices = 1;
+            break;
+        case 'c':
+            app_mode = APP_TEST;
+            performance_test = 1;
+            console_mode = 1;
+            if (device != -1)
+            {
+                puts("can't use -d and -c together");
+                return 1;
+            }
+            device = -2;
+            break;
+#endif
         case 't':
             app_mode = APP_TEST;
             performance_test = 1;
             console_mode = 1;
             break;
-        case 'l':
-            app_mode = APP_DISC;
-            break;
         case 'i':
             iter = strtoul(optarg, NULL, 0);
             if (iter < 16) draw_frames = 16;
             break;
-        case 'a':
-            all_devices = 1;
-            break;
-#endif
         case 'h':
             help();
             break;
@@ -1138,12 +1179,10 @@ int main(int argc, char* argv[])
             return 0;
         }
     }
-#ifdef OPENCL_SUPPORT
     if (console_mode && app_mode == APP_TEST)
     {
         draw_frames = iter;
     }
-#endif
     srandom(time(0));
 
     run_program(app_mode, device);
