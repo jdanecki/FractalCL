@@ -1,23 +1,22 @@
 starting performance test with 32000 iterations for device: 0
 ***********************************************************
-name:           Intel(R) HD Graphics Kabylake Halo GT2
+name:           Intel(R) HD Graphics Skylake ULT GT3
 vendor:         Intel
-device version: OpenCL 2.0 beignet 1.3
-driver version: 1.3
-ocl C version:  OpenCL C 2.0 beignet 1.3
+device version: OpenCL 1.2 beignet 1.2 (git-b39d875)
+driver version: 1.2
+ocl C version:  OpenCL C 1.2 beignet 1.2 (git-b39d875)
 type:           GPU
 extensions:     cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics
-cl_khr_byte_addressable_store cl_khr_3d_image_writes cl_khr_image2d_from_buffer cl_khr_depth_images cl_khr_spir cl_khr_icd cl_intel_accelerator
-cl_intel_subgroups cl_intel_subgroups_short cl_khr_gl_sharing cl_khr_fp16
+cl_khr_byte_addressable_store cl_khr_image2d_from_buffer cl_khr_spir cl_khr_icd cl_intel_accelerator cl_intel_motion_estimation cl_khr_fp16
 --- performance results --- 
-avg exec time: 355 [us]
+avg exec time: 265 [us]
 ***********************************************************
 starting performance test with 32000 iterations for device: 1
 ***********************************************************
 name:           Intel(R) Gen9 HD Graphics NEO
 vendor:         Intel(R) Corporation
 device version: OpenCL 2.1 NEO 
-driver version: 18.25.10965
+driver version: 1.0
 ocl C version:  OpenCL C 2.0 
 type:           GPU
 extensions:     cl_khr_3d_image_writes cl_khr_byte_addressable_store cl_khr_fp16 cl_khr_depth_images cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics
@@ -26,5 +25,4 @@ cl_intel_subgroups_short cl_khr_spir cl_intel_accelerator cl_intel_media_block_i
 cl_khr_throttle_hints cl_khr_create_command_queue cl_khr_fp64 cl_khr_subgroups cl_khr_il_program cl_khr_mipmap_image cl_khr_mipmap_image_writes cl_intel_planar_yuv
 cl_intel_packed_yuv cl_intel_motion_estimation cl_intel_advanced_motion_estimation 
 --- performance results --- 
-avg exec time: 227 [us]
-
+avg exec time: 251 [us]
