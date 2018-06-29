@@ -9,14 +9,14 @@ matrix:
         - os: linux
           env: OPENCL=OFF
           script:
-              - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=OFF .
+              - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=OFF -DCMAKE_INSTALL_PREFIX=/usr -DVERSION=0.0.1 .
               - make
               - make install
               - FractalCL -t -i 1000
         - os: linux
           env: OPENCL=ON
           script:
-              - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=ON .
+              - cmake -DFP_64_SUPPORT=ON -DSDL_ACCELERATED=OFF -DOPENCL_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=/usr -DVERSION=0.0.1 .
               - make
               - make install
               - FractalCL -c -i 1000
