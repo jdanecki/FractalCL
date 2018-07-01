@@ -4,13 +4,14 @@
 #define FP_TYPE float
 #endif
 
+#include "fractal_types.h"
+
 #ifdef HOST_APP
-void dragon(int px, int py, uint* pixels, unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-            unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+void dragon(int px, int py, uint* pixels, unsigned int* colors, struct kernel_args args)
+
 #else
 
-__kernel void dragon(__global uint* pixels, __global unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                     FP_TYPE er, unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+__kernel void dragon(__global uint* pixels, __global unsigned int* colors, struct kernel_args args)
 #endif
 {
 #ifndef HOST_APP
@@ -24,31 +25,31 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors, unsig
 
     if (px == 0 && py == 0)
     {
-        for (r = 0; r < max_iter; r++)
+        for (r = 0; r < args.max_iter; r++)
         {
             int select_move = 0;
 #ifdef HOST_APP
             if (rand() % 20 <= 10) select_move = 1;
 #else
-            if (cos(3.14f * sin(1.0f * r * r)) > er) select_move = 1;
+            if (cos(3.14f * sin(1.0f * r * r)) > args.er) select_move = 1;
 #endif
             if (select_move)
             {
-                x1 = -0.3 * xc - 1.0 + (c_x - 0.15f);
-                y1 = -0.3 * yc + 0.1 + (c_y + 0.60f);
+                x1 = -0.3 * xc - 1.0 + (args.c_x - 0.15f);
+                y1 = -0.3 * yc + 0.1 + (args.c_y + 0.60f);
             }
             else
             {
-                x1 = 0.76 * xc - 0.4 * yc + (c_x - 0.15f);
-                y1 = 0.4 * xc + 0.76 * yc + (c_y + 0.60f);
+                x1 = 0.76 * xc - 0.4 * yc + (args.c_x - 0.15f);
+                y1 = 0.4 * xc + 0.76 * yc + (args.c_y + 0.60f);
             }
             xc = x1;
             yc = y1;
-            x = (ofs_lx + x1) / step_x;
-            y = (ofs_ty + y1) / step_y;
+            x = (args.ofs_lx + x1) / args.step_x;
+            y = (args.ofs_ty + y1) / args.step_y;
             if (x < WIDTH / 2 && y < HEIGHT / 2 && x > -WIDTH / 2 && y > -HEIGHT / 2)
             {
-                pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r | mm;
+                pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r | args.mm;
             }
         }
     }

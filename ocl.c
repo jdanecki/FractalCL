@@ -196,8 +196,8 @@ int create_kernels(struct ocl_device* dev, char* options)
     filesizes[i] = test_fractal.filesize;
 
     sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
-                        "WIDTH=%d -D BPP=%d -D PITCH=%d %s",
-            options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "");
+                        "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
+            options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "", STRING_MACRO(DATA_PATH));
     dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 1, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)
     {

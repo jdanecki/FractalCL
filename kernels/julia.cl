@@ -4,13 +4,13 @@
 #define FP_TYPE float
 #endif
 
+#include "fractal_types.h"
+
 #ifdef HOST_APP
-void julia(int x, int y, uint* pixels, unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y, FP_TYPE er,
-           unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y)
+void julia(int x, int y, uint* pixels, unsigned int* colors, struct kernel_args args)
 #else
 
-__kernel void julia(__global uint* pixels, __global unsigned int* colors, unsigned int mm, FP_TYPE ofs_lx, FP_TYPE step_x, FP_TYPE ofs_ty, FP_TYPE step_y,
-                    FP_TYPE er, unsigned int max_iter, int pal, int show_z, FP_TYPE c_x, FP_TYPE c_y, int ofs_x, int ofs_y)
+__kernel void julia(__global uint* pixels, __global unsigned int* colors, struct kernel_args args)
 #endif
 {
     unsigned int i;
@@ -19,34 +19,34 @@ __kernel void julia(__global uint* pixels, __global unsigned int* colors, unsign
     FP_TYPE z_x, z_y, d;
 
 #ifndef HOST_APP
-    int x = ofs_x + 4 * get_global_id(0);
-    int y = ofs_y + 4 * get_global_id(1);
+    int x = args.ofs_x + 4 * get_global_id(0);
+    int y = args.ofs_y + 4 * get_global_id(1);
 #endif
-    z_x = ofs_lx + x * step_x;
-    z_y = ofs_ty + y * step_y;
+    z_x = args.ofs_lx + x * args.step_x;
+    z_y = args.ofs_ty + y * args.step_y;
 
     i = 0;
-    while (i < max_iter)
+    while (i < args.max_iter)
     {
-        j_x = z_x * z_x - z_y * z_y + c_x;
-        j_y = 2 * z_x * z_y + c_y;
+        j_x = z_x * z_x - z_y * z_y + args.c_x;
+        j_y = 2 * z_x * z_y + args.c_y;
 
         d = (j_x * j_x + j_y * j_y);
-        if (d > er) break;
+        if (d > args.er) break;
 
         z_x = j_x;
         z_y = j_y;
         i++;
     }
-    if (pal)
-        color = 0xff000000 | i | mm;
+    if (args.pal)
+        color = 0xff000000 | i | args.mm;
     else
     {
-        color = colors[i % 360 + 360 * (i < max_iter)];
-        color |= mm;
+        color = colors[i % 360 + 360 * (i < args.max_iter)];
+        color |= args.mm;
     }
 
-    if (show_z)
+    if (args.show_z)
     {
         unsigned int x1, y1;
         x1 = WIDTH / 2 + z_x * WIDTH / 4;

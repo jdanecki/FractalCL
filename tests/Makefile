@@ -20,8 +20,7 @@ OPENCL_LIB=$(shell pkg-config --libs OpenCL)
 SDL2_LIB=$(shell pkg-config --libs sdl2 SDL2_ttf)
 SDL2_CFLAGS=$(shell pkg-config --cflags sdl2 SDL2_ttf)
 
-INCLUDE=../include
-CFLAGS=-g -Wall -Wno-deprecated-declarations -I$(INCLUDE) 
+CFLAGS=-g -Wall -Wno-deprecated-declarations -I../include -Ikernels
 
 ifeq ($(FP_64_SUPPORT), 1)
 CFLAGS+=-DFP_64_SUPPORT=1

@@ -83,7 +83,6 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     struct kernel_args* args = &dev->args[fractal];
     int err;
     unsigned long tp1, tp2;
-    int fp_size = dev->fp64 ? sizeof(double) : sizeof(float);
 
     args->ofs_lx = ofs_lx;
     args->ofs_rx = ofs_rx;
@@ -96,12 +95,14 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     FP_TYPE ofs_by1 = (args->ofs_by + dy) / szy;
 
     lx = ofs_lx1;
+    args->ofs_lx = ofs_lx1;
     rx = ofs_rx1;
     ty = ofs_ty1;
+    args->ofs_ty = ofs_ty1;
     by = ofs_by1;
 
-    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
-    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+    args->step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    args->step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
 
     args->mm = mm;
     args->er = er;
@@ -127,61 +128,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
 
     if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels)) return 1;
     if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors)) return 1;
-    if (set_kernel_arg(kernel, name, 2, sizeof(cl_int), &mm)) return 1;
-    if (dev->fp64)
-    {
-        if (set_kernel_arg(kernel, name, 3, fp_size, &ofs_lx1)) return 1;
-        if (set_kernel_arg(kernel, name, 4, fp_size, &step_x)) return 1;
-        if (set_kernel_arg(kernel, name, 5, fp_size, &ofs_ty1)) return 1;
-        if (set_kernel_arg(kernel, name, 6, fp_size, &step_y)) return 1;
-        if (set_kernel_arg(kernel, name, 7, fp_size, &args->er)) return 1;
-    }
-    else
-    {
-        float fofs_lx1 = (float)ofs_lx1;
-        float fofs_ty1 = (float)ofs_ty1;
-
-        float fstep_x = (float)step_x;
-        float fstep_y = (float)step_y;
-
-        float fer = (float)args->er;
-
-        if (set_kernel_arg(kernel, name, 3, fp_size, &fofs_lx1)) return 1;
-        if (set_kernel_arg(kernel, name, 4, fp_size, &fstep_x)) return 1;
-        if (set_kernel_arg(kernel, name, 5, fp_size, &fofs_ty1)) return 1;
-        if (set_kernel_arg(kernel, name, 6, fp_size, &fstep_y)) return 1;
-        if (set_kernel_arg(kernel, name, 7, fp_size, &fer)) return 1;
-    }
-    if (set_kernel_arg(kernel, name, 8, sizeof(int), &args->max_iter)) return 1;
-    if (set_kernel_arg(kernel, name, 9, sizeof(int), &args->pal)) return 1;
-    if (set_kernel_arg(kernel, name, 10, sizeof(int), &args->show_z)) return 1;
-    if (fractal == JULIA || fractal == JULIA_FULL || fractal == DRAGON || fractal == JULIA3)
-    {
-        if (dev->fp64)
-        {
-            if (set_kernel_arg(kernel, name, 11, fp_size, &args->c_x)) return 1;
-            if (set_kernel_arg(kernel, name, 12, fp_size, &args->c_y)) return 1;
-        }
-        else
-        {
-            float fc_x = (float)args->c_x;
-            float fc_y = (float)args->c_y;
-
-            if (set_kernel_arg(kernel, name, 11, fp_size, &fc_x)) return 1;
-            if (set_kernel_arg(kernel, name, 12, fp_size, &fc_y)) return 1;
-        }
-
-        if (fractal == JULIA || fractal == JULIA3)
-        {
-            if (set_kernel_arg(kernel, name, 13, sizeof(int), &args->ofs_x)) return 1;
-            if (set_kernel_arg(kernel, name, 14, sizeof(int), &args->ofs_y)) return 1;
-        }
-    }
-    if (fractal == MANDELBROT || fractal == BURNING_SHIP || fractal == GENERALIZED_CELTIC)
-    {
-        if (set_kernel_arg(kernel, name, 11, sizeof(int), &args->ofs_x)) return 1;
-        if (set_kernel_arg(kernel, name, 12, sizeof(int), &args->ofs_y)) return 1;
-    }
+    if (set_kernel_arg(kernel, name, 2, sizeof(*args), args)) return 1;
 
     // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
     // NULL, &dev->event);

@@ -266,13 +266,17 @@ int initialize_colors()
 
 struct cpu_args
 {
-    int xs, xe, ys, ye, ofs_x, ofs_y;
+    int xs, xe, ys, ye;
 };
 
-void* execute_fractal_cpu(void* c)
+struct kernel_args cpu_kernel_args;
+
+void prepare_cpu_args()
 {
-    int x, y;
-    struct cpu_args* cpu = (struct cpu_args*)c;
+    cpu_kernel_args.ofs_lx = ofs_lx;
+    cpu_kernel_args.ofs_rx = ofs_rx;
+    cpu_kernel_args.ofs_ty = ofs_ty;
+    cpu_kernel_args.ofs_by = ofs_by;
 
     FP_TYPE ofs_lx1 = (ofs_lx + dx) / szx;
     FP_TYPE ofs_rx1 = (ofs_rx + dx) / szx;
@@ -280,12 +284,30 @@ void* execute_fractal_cpu(void* c)
     FP_TYPE ofs_by1 = (ofs_by + dy) / szy;
 
     lx = ofs_lx1;
+    cpu_kernel_args.ofs_lx = ofs_lx1;
     rx = ofs_rx1;
     ty = ofs_ty1;
+    cpu_kernel_args.ofs_ty = ofs_ty1;
     by = ofs_by1;
 
-    FP_TYPE step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
-    FP_TYPE step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+    cpu_kernel_args.step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    cpu_kernel_args.step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+
+    cpu_kernel_args.mm = mm;
+    cpu_kernel_args.er = er;
+    cpu_kernel_args.max_iter = max_iter;
+    cpu_kernel_args.pal = pal;
+    cpu_kernel_args.show_z = show_z;
+    cpu_kernel_args.c_x = c_x;
+    cpu_kernel_args.c_y = c_y;
+}
+
+void* execute_fractal_cpu(void* c)
+{
+    int x, y;
+    struct cpu_args* cpu = (struct cpu_args*)c;
+
+    prepare_cpu_args();
 
     for (y = cpu->ys; y < cpu->ye; y++)
     {
@@ -294,22 +316,22 @@ void* execute_fractal_cpu(void* c)
             switch (fractal)
             {
             case JULIA:
-                julia(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
                 break;
             case JULIA3:
-                julia3(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia3(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
                 break;
             case JULIA_FULL:
-                julia_full(x, y, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z, c_x, c_y);
+                julia_full(x, y, cpu_pixels, colors, cpu_kernel_args);
                 break;
             case MANDELBROT:
-                mandelbrot(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
+                mandelbrot(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
                 break;
             case BURNING_SHIP:
-                burning_ship(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
+                burning_ship(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
                 break;
             case GENERALIZED_CELTIC:
-                generalized_celtic(cpu->ofs_x + x * 4, cpu->ofs_y + y * 4, cpu_pixels, colors, mm, ofs_lx, step_x, ofs_ty, step_y, er, max_iter, pal, show_z);
+                generalized_celtic(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
                 break;
             default:
                 return NULL;
@@ -322,19 +344,18 @@ void* execute_fractal_cpu(void* c)
 void start_cpu()
 {
     unsigned long tp1, tp2;
-    static int ofs_x = 0, ofs_y = 0;
     int t;
 
-    ofs_x++;
-    if (ofs_x == 4)
+    cpu_kernel_args.ofs_x++;
+    if (cpu_kernel_args.ofs_x == 4)
     {
-        ofs_y++;
-        ofs_x = 0;
+        cpu_kernel_args.ofs_y++;
+        cpu_kernel_args.ofs_x = 0;
     }
-    if (ofs_y == 4)
+    if (cpu_kernel_args.ofs_y == 4)
     {
-        ofs_x = 0;
-        ofs_y = 0;
+        cpu_kernel_args.ofs_x = 0;
+        cpu_kernel_args.ofs_y = 0;
     }
 
     tp1 = get_time_usec();
@@ -342,29 +363,30 @@ void start_cpu()
     if (fractal == DRAGON)
     {
         memset(cpu_pixels, 0, IMAGE_SIZE);
-        dragon(0, 0, cpu_pixels, colors, mm, ofs_lx, 0, ofs_ty, 0, er, max_iter, pal, show_z, c_x, c_y);
+        prepare_cpu_args();
+        dragon(0, 0, cpu_pixels, colors, cpu_kernel_args);
     }
     else
     {
-        struct cpu_args t_args[16] = {{0, gws_x / 4, 0, gws_y / 4, ofs_x, ofs_y},
-                                      {gws_x / 4, gws_x / 2, 0, gws_y / 4, ofs_x, ofs_y},
-                                      {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4, ofs_x, ofs_y},
-                                      {gws_x * 3 / 4, gws_x, 0, gws_y / 4, ofs_x, ofs_y},
+        struct cpu_args t_args[16] = {{0, gws_x / 4, 0, gws_y / 4},
+                                      {gws_x / 4, gws_x / 2, 0, gws_y / 4},
+                                      {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4},
+                                      {gws_x * 3 / 4, gws_x, 0, gws_y / 4},
 
-                                      {0, gws_x / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-                                      {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
-                                      {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2, ofs_x, ofs_y},
+                                      {0, gws_x / 4, gws_y / 4, gws_y / 2},
+                                      {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2},
+                                      {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2},
 
-                                      {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-                                      {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
-                                      {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4, ofs_x, ofs_y},
+                                      {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4},
+                                      {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4},
+                                      {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4},
 
-                                      {0, gws_x / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-                                      {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y, ofs_x, ofs_y},
-                                      {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y, ofs_x, ofs_y}};
+                                      {0, gws_x / 4, gws_y * 3 / 4, gws_y},
+                                      {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y},
+                                      {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y},
+                                      {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y}};
 
         pthread_t tid[16];
         for (t = 0; t < 16; t++)

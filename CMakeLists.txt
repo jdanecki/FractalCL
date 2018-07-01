@@ -25,6 +25,7 @@ pkg_check_modules(SDL sdl2)
 pkg_check_modules(SDL_TTF SDL2_ttf)
 
 include_directories(include)
+include_directories(kernels)
 
 add_definitions("-march=native -mtune=native -g -Wall -Wno-deprecated-declarations " ${SDL_CFLAGS} ${SDL_TTF_CFLAGS} -DHOST_APP -DDATA_PATH=${CMAKE_INSTALL_PREFIX}/share/FractalCL -DVERSION=${VERSION})
 
