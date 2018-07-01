@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 FP_64_SUPPORT=1
-SDL_ACCELERATED=0
+SDL_ACCELERATED=1
 
 OPENCL_LIB=$(shell pkg-config --libs OpenCL)
 SDL2_LIB=$(shell pkg-config --libs sdl2 SDL2_ttf)

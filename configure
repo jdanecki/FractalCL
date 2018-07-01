@@ -11,7 +11,7 @@ FP_64_SUPPORT=ON
 #FP_64_SUPPORT=OFF
 
 #Use SDL with GPU acceleration, disabled by default
-SDL_ACCELERATED=OFF
+SDL_ACCELERATED=ON
 
 #Use OpenCL to accelerate calculation, enabled by default
 OPENCL_SUPPORT=ON
