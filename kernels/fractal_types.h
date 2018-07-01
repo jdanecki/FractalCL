@@ -18,20 +18,38 @@
 #ifndef __FRACTAL_TYPES__
 #define __FRACTAL_TYPES__
 
-struct kernel_args
+struct kernel_args64
 {
     unsigned int mm;
-    FP_TYPE ofs_lx;
-    FP_TYPE ofs_rx;
-    FP_TYPE ofs_ty;
-    FP_TYPE ofs_by;
-    FP_TYPE step_x;
-    FP_TYPE step_y;
-    FP_TYPE er;
+    double ofs_lx;
+    double ofs_rx;
+    double ofs_ty;
+    double ofs_by;
+    double step_x;
+    double step_y;
+    double er;
     unsigned int max_iter;
     int pal;
     int show_z;
-    FP_TYPE c_x, c_y;
+    double c_x, c_y;
     int ofs_x, ofs_y;
 };
+
+struct kernel_args32
+{
+    unsigned int mm;
+    float ofs_lx;
+    float ofs_rx;
+    float ofs_ty;
+    float ofs_by;
+    float step_x;
+    float step_y;
+    float er;
+    unsigned int max_iter;
+    int pal;
+    int show_z;
+    float c_x, c_y;
+    int ofs_x, ofs_y;
+};
+
 #endif

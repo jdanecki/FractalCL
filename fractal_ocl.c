@@ -74,26 +74,19 @@ int set_kernel_arg(cl_kernel kernel, char* name, int i, int size, void* arg)
     return 0;
 }
 
-int execute_fractal(struct ocl_device* dev, enum fractals fractal)
+void prepare_kernel_args64(struct kernel_args64* args)
 {
-    size_t gws[2];
-    size_t ofs[2] = {0, 0};
-    cl_kernel kernel = dev->kernels[fractal];
-    char* name = fractals[fractal].name;
-    struct kernel_args* args = &dev->args[fractal];
-    int err;
-    unsigned long tp1, tp2;
+    FP_TYPE ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
 
     args->ofs_lx = ofs_lx;
     args->ofs_rx = ofs_rx;
     args->ofs_ty = ofs_ty;
     args->ofs_by = ofs_by;
 
-    FP_TYPE ofs_lx1 = (args->ofs_lx + dx) / szx;
-    FP_TYPE ofs_rx1 = (args->ofs_rx + dx) / szx;
-    FP_TYPE ofs_ty1 = (args->ofs_ty + dy) / szy;
-    FP_TYPE ofs_by1 = (args->ofs_by + dy) / szy;
-
+    ofs_lx1 = (args->ofs_lx + dx) / szx;
+    ofs_rx1 = (args->ofs_rx + dx) / szx;
+    ofs_ty1 = (args->ofs_ty + dy) / szy;
+    ofs_by1 = (args->ofs_by + dy) / szy;
     lx = ofs_lx1;
     args->ofs_lx = ofs_lx1;
     rx = ofs_rx1;
@@ -122,13 +115,78 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
         args->ofs_x = 0;
         args->ofs_y = 0;
     }
+}
+
+void prepare_kernel_args32(struct kernel_args32* args)
+{
+    float ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
+
+    args->ofs_lx = ofs_lx;
+    args->ofs_rx = ofs_rx;
+    args->ofs_ty = ofs_ty;
+    args->ofs_by = ofs_by;
+
+    ofs_lx1 = (args->ofs_lx + dx) / szx;
+    ofs_rx1 = (args->ofs_rx + dx) / szx;
+    ofs_ty1 = (args->ofs_ty + dy) / szy;
+    ofs_by1 = (args->ofs_by + dy) / szy;
+    lx = ofs_lx1;
+    args->ofs_lx = ofs_lx1;
+    rx = ofs_rx1;
+    ty = ofs_ty1;
+    args->ofs_ty = ofs_ty1;
+    by = ofs_by1;
+
+    args->step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
+    args->step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
+
+    args->mm = mm;
+    args->er = er;
+    args->max_iter = max_iter;
+    args->pal = pal;
+    args->show_z = show_z;
+    args->c_x = c_x;
+    args->c_y = c_y;
+    args->ofs_x++;
+    if (args->ofs_x == 4)
+    {
+        args->ofs_y++;
+        args->ofs_x = 0;
+    }
+    if (args->ofs_y == 4)
+    {
+        args->ofs_x = 0;
+        args->ofs_y = 0;
+    }
+}
+
+int execute_fractal(struct ocl_device* dev, enum fractals fractal)
+{
+    size_t gws[2];
+    size_t ofs[2] = {0, 0};
+    cl_kernel kernel = dev->kernels[fractal];
+    char* name = fractals[fractal].name;
+    int err;
+    unsigned long tp1, tp2;
 
     gws[0] = gws_x;
     gws[1] = gws_y;
 
     if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels)) return 1;
     if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors)) return 1;
-    if (set_kernel_arg(kernel, name, 2, sizeof(*args), args)) return 1;
+
+    if (dev->fp64)
+    {
+        struct kernel_args64* args64 = &dev->args64[fractal];
+        prepare_kernel_args64(args64);
+        if (set_kernel_arg(kernel, name, 2, sizeof(*args64), args64)) return 1;
+    }
+    else
+    {
+        struct kernel_args32* args32 = &dev->args32[fractal];
+        prepare_kernel_args32(args32);
+        if (set_kernel_arg(kernel, name, 2, sizeof(*args32), args32)) return 1;
+    }
 
     // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
     // NULL, &dev->event);
