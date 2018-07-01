@@ -1,15 +1,17 @@
 #ifdef FP_64_SUPPORT
 #define FP_TYPE double
+#define KERNEL_ARGS kernel_args64
 #else
 #define FP_TYPE float
+#define KERNEL_ARGS kernel_args32
 #endif
 
 #include "fractal_types.h"
 
 #ifdef HOST_APP
-void julia3(int x, int y, uint* pixels, unsigned int* colors, struct kernel_args args)
+void julia3(int x, int y, uint* pixels, unsigned int* colors, struct KERNEL_ARGS args)
 #else
-__kernel void julia3(__global uint* pixels, __global unsigned int* colors, struct kernel_args args)
+__kernel void julia3(__global uint* pixels, __global unsigned int* colors, struct KERNEL_ARGS args)
 #endif
 {
     unsigned int i;

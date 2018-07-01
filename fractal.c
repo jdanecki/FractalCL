@@ -269,7 +269,11 @@ struct cpu_args
     int xs, xe, ys, ye;
 };
 
-struct kernel_args cpu_kernel_args;
+#ifdef FP_64_SUPPORT
+struct kernel_args64 cpu_kernel_args;
+#else
+struct kernel_args32 cpu_kernel_args;
+#endif
 
 void prepare_cpu_args()
 {

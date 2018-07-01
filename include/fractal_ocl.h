@@ -50,7 +50,8 @@ struct ocl_device
     cl_program program;
     cl_kernel kernels[NR_FRACTALS];
     cl_kernel test_kernel;
-    struct kernel_args args[NR_FRACTALS];
+    struct kernel_args64 args64[NR_FRACTALS];
+    struct kernel_args32 args32[NR_FRACTALS];
     cl_event event;
     char* name;
     char* vendor;
