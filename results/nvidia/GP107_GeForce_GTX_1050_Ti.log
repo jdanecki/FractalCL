@@ -1,0 +1,13 @@
+starting performance test with 32000 iterations for device: 2
+***********************************************************
+name:           GeForce GTX 1050 Ti
+vendor:         NVIDIA Corporation
+device version: OpenCL 1.2 CUDA
+driver version: 390.67
+ocl C version:  OpenCL C 1.2 
+type:           GPU
+extensions:     cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_fp64 cl_khr_byte_addressable_store
+cl_khr_icd cl_khr_gl_sharing cl_nv_compiler_options cl_nv_device_attribute_query cl_nv_pragma_unroll cl_nv_copy_opts cl_nv_create_buffer
+--- performance results --- 
+avg exec time: 43 [us]
+
