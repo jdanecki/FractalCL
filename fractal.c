@@ -925,8 +925,8 @@ void gui_loop()
                 if (event.button.x > WIDTH) continue;
                 if (event.button.button == 2)
                 {
-                    dx = 0;
-                    dy = 0;
+                    zx = 1.0;
+                    zy = 1.0;
 
                     draw = 0;
                     animate = 0;
