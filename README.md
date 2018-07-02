@@ -14,7 +14,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * 2 colors models: RGB and HSV
 * OpenCL kernels can be executed on CPU without OpenCL libraries
 * fp64 support checked at runtime, can be disabled in configuration (configure script)
-* Suppport multiple OpenCL platforms/devices
+* Support multiple OpenCL platforms/devices
 * Performance tests
 
 # Tested Linux OpenCL implementations
