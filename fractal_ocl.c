@@ -97,6 +97,7 @@ void prepare_kernel_args64(struct kernel_args64* args)
     args->step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
     args->step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
 
+    args->rgb = rgb;
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;
@@ -140,6 +141,7 @@ void prepare_kernel_args32(struct kernel_args32* args)
     args->step_x = (ofs_rx1 - ofs_lx1) / WIDTH_FL;
     args->step_y = (ofs_by1 - ofs_ty1) / HEIGHT_FL;
 
+    args->rgb = rgb;
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;

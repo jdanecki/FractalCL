@@ -17,6 +17,7 @@
 
 #include "parameters.h"
 #include "window.h"
+#include <SDL.h>
 
 FP_TYPE zx = 1.0, zy = 1.0; // zoom x, y
 FP_TYPE zoom = 1.0f;
@@ -24,7 +25,9 @@ FP_TYPE dx, dy;               // shift left/right, down/up
 FP_TYPE szx = 1.0, szy = 1.0; // scale x and y
 FP_TYPE mx, my;               // mouse coordinates between [ofs_lx..ofs_rx, ofs_ty..ofs_by]
 
-unsigned int mm = 16;
+unsigned int rgb;
+unsigned int mm = 1;
+
 int gws_x = WIDTH / 4;
 int gws_y = HEIGHT / 4;
 
@@ -47,7 +50,7 @@ FP_TYPE by;
 FP_TYPE er = 4.0f;
 
 unsigned int max_iter = 360;
-int pal;     // 0=hsv 1=rgb
+int pal;     // 0=hsv 1,...=rgb
 int palette; // 1 - show palette
 int show_z;
 FP_TYPE c_x = 0.15f;
@@ -67,6 +70,11 @@ unsigned long cpu_executions, gpu_executions;
 unsigned long cpu_iter, gpu_iter;
 int color_channel; // r, g, b
 extern int quiet;
+extern void draw_box(int x, int y, int w, int h, int r, int g, int b);
+
+#ifdef OPENCL_SUPPORT
+extern void clear_pixels_ocl();
+#endif
 
 int calculate_offsets()
 {
@@ -148,6 +156,37 @@ void select_fractal(int f)
     }
 }
 
+void select_fractals(int k)
+{
+    switch (k)
+    {
+    case SDLK_F1:
+        select_fractal(JULIA);
+        break;
+    case SDLK_F2:
+        select_fractal(MANDELBROT);
+        break;
+    case SDLK_F3:
+        select_fractal(JULIA_FULL);
+        break;
+    case SDLK_F4:
+        select_fractal(DRAGON);
+#ifdef OPENCL_SUPPORT
+        clear_pixels_ocl();
+#endif
+        break;
+    case SDLK_F5:
+        select_fractal(JULIA3);
+        break;
+    case SDLK_F6:
+        select_fractal(BURNING_SHIP);
+        break;
+    case SDLK_F7:
+        select_fractal(GENERALIZED_CELTIC);
+        break;
+    }
+}
+
 void dec_int(unsigned int* v, unsigned int by, unsigned int min, int clear)
 {
     *v -= by;
@@ -172,4 +211,163 @@ void inc_float(FP_TYPE* v, FP_TYPE by, int clear)
 {
     *v += by;
     if (clear) clear_counters();
+}
+
+void change_fractal_params(int kl, int mod_kl)
+{
+    int mod = 0;
+    if (mod_kl == 1 || mod_kl == 2) mod = 1;
+    switch (kl)
+    {
+    case 'i':
+        if (mod)
+            dec_int(&max_iter, 1, 1, 1);
+        else
+            inc_int(&max_iter, 1, 1);
+        break;
+    case 'e':
+        if (mod)
+            dec_float(&er, 0.1, 0.1, 1);
+        else
+            inc_float(&er, 0.1, 1);
+        break;
+    case '2':
+        gws_x *= 2;
+        if (gws_x > WIDTH) gws_x = WIDTH;
+        gws_y *= 2;
+        if (gws_y > HEIGHT) gws_y = HEIGHT;
+        printf("gws: x=%d y=%d\n", gws_x, gws_y);
+        clear_counters();
+        break;
+    case '3':
+        gws_x /= 2;
+        if (gws_x < 8) gws_x = 8;
+        gws_y /= 2;
+        if (gws_y < 8) gws_y = 8;
+        printf("gws: x=%d y=%d\n", gws_x, gws_y);
+        clear_counters();
+        break;
+    }
+}
+
+void change_fractal_colors(int kl, int mod_kl)
+{
+    int mod = 0;
+    if (mod_kl == 1 || mod_kl == 2) mod = 1;
+
+    switch (kl)
+    {
+    case 'c':
+        if (mod)
+        {
+            color_channel--;
+            if (color_channel < 0) color_channel = 0;
+        }
+        else
+        {
+            color_channel++;
+            if (color_channel > 2) color_channel = 2;
+        }
+        break;
+    case '=':
+        if (mod)
+            rgb += 1 << (color_channel * 8);
+        else
+            rgb -= 1 << (color_channel * 8);
+        break;
+    case '-':
+        if (mod)
+            rgb += 16 << (color_channel * 8);
+        else
+            rgb -= 16 << (color_channel * 8);
+        break;
+    case 'm':
+        if (mod)
+            dec_int(&mm, 1, 1, 1);
+        else
+            inc_int(&mm, 1, 1);
+        break;
+    case 'p':
+        if (mod)
+        {
+            palette ^= 1;
+            if (palette) rgb = 0;
+        }
+        else
+        {
+            pal++;
+            if (pal == 3) pal = 0;
+            draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
+        }
+        break;
+    }
+}
+
+int move_fractal(int kl, int mod_kl)
+{
+    int mod = 0;
+    if (mod_kl == 1 || mod_kl == 2) mod = 1;
+    int key = 0;
+
+    switch (kl)
+    {
+    case SDLK_LEFT:
+        dec_float(&szx, 0.01 / zoom, 0.1, 1);
+        key = 1;
+        break;
+    case SDLK_RIGHT:
+        inc_float(&szx, 0.01 / zoom, 1);
+        key = 1;
+        break;
+    case SDLK_DOWN:
+        dec_float(&szy, 0.01 / zoom, 0.1, 1);
+        key = 1;
+        break;
+    case SDLK_UP:
+        inc_float(&szy, 0.01 / zoom, 1);
+        key = 1;
+        break;
+    case 'a':
+        inc_float(&dx, -0.1 / zoom, 0);
+        key = 1;
+        break;
+    case 'd':
+        inc_float(&dx, 0.1 / zoom, 0);
+        key = 1;
+        break;
+    case 's':
+        inc_float(&dy, -0.1 / zoom, 0);
+        key = 1;
+        break;
+    case 'w':
+        inc_float(&dy, 0.1 / zoom, 0);
+        key = 1;
+        break;
+    case '8':
+        if (mod)
+        {
+            inc_float(&szx, 1.0, 0);
+            inc_float(&szy, 1.0, 1);
+            key = 1;
+        }
+        break;
+    case '/':
+        dec_float(&szx, 1.0, 1.0, 0);
+        dec_float(&szy, 1.0, 1.0, 0);
+        key = 1;
+        break;
+    case 'x':
+        if (mod)
+            c_x -= 0.001;
+        else
+            c_x += 0.001;
+        break;
+    case 'y':
+        if (mod)
+            c_y -= 0.001;
+        else
+            c_y += 0.001;
+        break;
+    }
+    return key;
 }

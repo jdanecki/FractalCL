@@ -51,7 +51,7 @@ __kernel void dragon(__global uint* pixels, __global unsigned int* colors, struc
             y = (args.ofs_ty + y1) / args.step_y;
             if (x < WIDTH / 2 && y < HEIGHT / 2 && x > -WIDTH / 2 && y > -HEIGHT / 2)
             {
-                pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r | args.mm;
+                pixels[(HEIGHT / 2 - y) * WIDTH + WIDTH / 2 + x] = 0xff0000 | r * args.mm | args.rgb;
             }
         }
     }

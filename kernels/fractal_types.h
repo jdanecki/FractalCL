@@ -20,6 +20,7 @@
 
 struct kernel_args64
 {
+    unsigned int rgb;
     unsigned int mm;
     double ofs_lx;
     double ofs_rx;
@@ -37,6 +38,7 @@ struct kernel_args64
 
 struct kernel_args32
 {
+    unsigned int rgb;
     unsigned int mm;
     float ofs_lx;
     float ofs_rx;

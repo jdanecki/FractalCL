@@ -40,12 +40,14 @@ __kernel void julia3(__global uint* pixels, __global unsigned int* colors, struc
         z_y = j_y;
         i++;
     }
+    i *= args.mm;
+
     if (args.pal)
-        color = 0xff000000 | i | args.mm;
+        color = 0xff000000 | i | args.rgb;
     else
     {
         color = colors[i % 360 + 360 * (i < args.max_iter)];
-        color |= args.mm;
+        color |= args.rgb;
     }
 
     if (args.show_z)
