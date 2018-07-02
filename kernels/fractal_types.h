@@ -34,6 +34,7 @@ struct kernel_args64
     int show_z;
     double c_x, c_y;
     int ofs_x, ofs_y;
+    float c1[3], c2[3], c3[3], c4[3];
 };
 
 struct kernel_args32
@@ -52,6 +53,7 @@ struct kernel_args32
     int show_z;
     float c_x, c_y;
     int ofs_x, ofs_y;
+    float c1[3], c2[3], c3[3], c4[3];
 };
 
 #endif

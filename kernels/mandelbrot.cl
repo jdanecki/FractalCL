@@ -14,7 +14,8 @@ __kernel void mandelbrot(__global uint* pixels, __global unsigned int* colors, s
 #endif
 {
     unsigned int i;
-    unsigned int color = 0;
+    unsigned int color = 0, r, g, b;
+    float c;
     FP_TYPE j_x, j_y;
     FP_TYPE z_x = 0, z_y = 0;
     FP_TYPE d;
@@ -41,14 +42,26 @@ __kernel void mandelbrot(__global uint* pixels, __global unsigned int* colors, s
         z_y = j_y;
         i++;
     }
-    i *= args.mm;
-    if (args.pal)
-        color = 0xff000000 | i | args.rgb;
-    else
+    switch (args.pal)
     {
+    case 1:
+        i *= args.mm;
+        color = 0xff000000 | i | args.rgb;
+        break;
+    case 2:
+        c = 1.0 * i / args.max_iter;
+        r = 255 * (args.c1[0] + args.c2[0] * cos(6.2830 * (args.c3[0] * c + args.c4[0])));
+        g = 255 * (args.c1[1] + args.c2[1] * cos(6.2830 * (args.c3[1] * c + args.c4[1])));
+        b = 255 * (args.c1[2] + args.c2[2] * cos(6.2830 * (args.c3[2] * c + args.c4[2])));
+        color = r << 16 | g << 8 | b;
+        break;
+    case 0:
+        i *= args.mm;
         color = colors[i % 360 + 360 * (i < args.max_iter)];
         color |= args.rgb;
+        break;
     }
+
     if (args.show_z)
     {
         int x1, y1;

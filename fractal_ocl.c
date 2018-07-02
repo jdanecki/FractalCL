@@ -77,11 +77,20 @@ int set_kernel_arg(cl_kernel kernel, char* name, int i, int size, void* arg)
 void prepare_kernel_args64(struct kernel_args64* args)
 {
     FP_TYPE ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
+    int c;
 
     args->ofs_lx = ofs_lx;
     args->ofs_rx = ofs_rx;
     args->ofs_ty = ofs_ty;
     args->ofs_by = ofs_by;
+
+    for (c = 0; c < 3; c++)
+    {
+        args->c1[c] = c1[c];
+        args->c2[c] = c2[c];
+        args->c3[c] = c3[c];
+        args->c4[c] = c4[c];
+    }
 
     ofs_lx1 = (args->ofs_lx + dx) / szx;
     ofs_rx1 = (args->ofs_rx + dx) / szx;
@@ -121,12 +130,20 @@ void prepare_kernel_args64(struct kernel_args64* args)
 void prepare_kernel_args32(struct kernel_args32* args)
 {
     float ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
+    int c;
 
     args->ofs_lx = ofs_lx;
     args->ofs_rx = ofs_rx;
     args->ofs_ty = ofs_ty;
     args->ofs_by = ofs_by;
 
+    for (c = 0; c < 3; c++)
+    {
+        args->c1[c] = c1[c];
+        args->c2[c] = c2[c];
+        args->c3[c] = c3[c];
+        args->c4[c] = c4[c];
+    }
     ofs_lx1 = (args->ofs_lx + dx) / szx;
     ofs_rx1 = (args->ofs_rx + dx) / szx;
     ofs_ty1 = (args->ofs_ty + dy) / szy;

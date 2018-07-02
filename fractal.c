@@ -50,6 +50,8 @@ int performance_test;
 unsigned long last_avg_result;
 int console_mode;
 
+char* fractals_names[NR_FRACTALS] = {"julia z^2", "mandelbrot", "julia full", "dragon", "julia z^3", "burning ship", "generalized celtic"};
+
 enum app_modes
 {
     APP_GUI,  // default GUI support
@@ -277,6 +279,8 @@ struct kernel_args32 cpu_kernel_args;
 
 void prepare_cpu_args()
 {
+    int c;
+
     cpu_kernel_args.ofs_lx = ofs_lx;
     cpu_kernel_args.ofs_rx = ofs_rx;
     cpu_kernel_args.ofs_ty = ofs_ty;
@@ -305,6 +309,14 @@ void prepare_cpu_args()
     cpu_kernel_args.show_z = show_z;
     cpu_kernel_args.c_x = c_x;
     cpu_kernel_args.c_y = c_y;
+
+    for (c = 0; c < 3; c++)
+    {
+        cpu_kernel_args.c1[c] = c1[c];
+        cpu_kernel_args.c2[c] = c2[c];
+        cpu_kernel_args.c3[c] = c3[c];
+        cpu_kernel_args.c4[c] = c4[c];
+    }
 }
 
 void* execute_fractal_cpu(void* c)
@@ -440,27 +452,25 @@ void draw_right_panel(int column)
 #ifdef OPENCL_SUPPORT
     draw_int(raw++, "v device", cur_dev);
 #endif
-    draw_int(raw++, "1 show_z", show_z);
+    //    draw_int(raw++, "1 show_z", show_z);
     draw_double(raw++, "lx", lx);
     draw_double(raw++, "rx", rx);
     draw_double(raw++, "ty", ty);
     draw_double(raw++, "by", by);
 
-    raw++;
     draw_string(raw++, "==", " Parameters ===");
     draw_int(raw++, "i/I iter", max_iter);
     draw_double(raw++, "e/E er", er);
     draw_double(raw++, "x/X c_x", c_x);
     draw_double(raw++, "y/Y c_y", c_y);
-#ifdef OPENCL_SUPPORT
-    draw_int(raw++, "2/3 gws_x", gws_x);
-    draw_int(raw++, "2/3 gws_y", gws_y);
-#endif
+    /*#ifdef OPENCL_SUPPORT
+        draw_int(raw++, "2/3 gws_x", gws_x);
+        draw_int(raw++, "2/3 gws_y", gws_y);
+    #endif*/
     draw_double(raw++, "zoom", zoom);
     draw_double(raw++, "LB/RB zx", zx);
     draw_double(raw++, "LB/RB zy", zy);
 
-    raw++;
     draw_string(raw++, "P ", " Colors ==");
     draw_int(raw++, "p pal", pal);
 
@@ -468,6 +478,11 @@ void draw_right_panel(int column)
     draw_hex(raw++, "+/= rgb +-1", rgb);
     draw_hex(raw++, "_/- rgb +-16", rgb);
     draw_hex(raw++, "m/M mm +-1", mm);
+
+    draw_double(raw++, "h/H c1", c1[color_channel]);
+    draw_double(raw++, "j/J c2", c2[color_channel]);
+    draw_double(raw++, "k/K c3", c3[color_channel]);
+    draw_double(raw++, "l/L c4", c4[color_channel]);
 
     draw_string(raw++, "===", " Moves ====");
     draw_double(raw++, "Left/Right szx", szx);
@@ -477,7 +492,6 @@ void draw_right_panel(int column)
     draw_double(raw++, "a/d dx", dx);
     draw_double(raw++, "w/s dy", dy);
 
-    raw++;
     draw_string(raw++, "SPACE", " Benchmarking [us]");
     draw_long(raw++, "time", frames_time / draw_frames);
     avg = calculate_avg_time(&exec_time);
@@ -728,7 +742,7 @@ void gui_loop()
                 column %= WIDTH;
             }
 
-            sprintf(status_line, "[%2.20f,%2.20f] %s", m2x, m2y, cur_dev ? "OCL" : "CPU");
+            sprintf(status_line, "[%2.20f,%2.20f] %s: %s", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal]);
             write_text(status_line, 0, HEIGHT - FONT_SIZE);
 #ifdef OPENCL_SUPPORT
             if (cur_dev)
@@ -783,6 +797,10 @@ void gui_loop()
                 case '-':
                 case 'm':
                 case 'p':
+                case 'h':
+                case 'j':
+                case 'k':
+                case 'l':
                     change_fractal_colors(kl, event.key.keysym.mod);
                     break;
                 case SDLK_LEFT:
@@ -797,6 +815,7 @@ void gui_loop()
                 case '/':
                 case 'x':
                 case 'y':
+                case 'r':
                     key = move_fractal(kl, event.key.keysym.mod);
                     break;
 

@@ -48,6 +48,10 @@ FP_TYPE ty;
 FP_TYPE by;
 #endif
 FP_TYPE er = 4.0f;
+float c1[3] = {0.5f, 0.5f, 0.5f};
+float c2[3] = {0.5f, 0.5f, 0.5f};
+float c3[3] = {1.0f, 1.0f, 1.0f};
+float c4[3] = {0.0f, 0.33f, 0.66f};
 
 unsigned int max_iter = 360;
 int pal;     // 0=hsv 1,...=rgb
@@ -200,14 +204,27 @@ void inc_int(unsigned int* v, unsigned int by, int clear)
     if (clear) clear_counters();
 }
 
-void dec_float(FP_TYPE* v, FP_TYPE by, FP_TYPE min, int clear)
+void dec_fp_type(FP_TYPE* v, FP_TYPE by, FP_TYPE min, int clear)
 {
     *v -= by;
     if (*v < min) *v = min;
     if (clear) clear_counters();
 }
 
-void inc_float(FP_TYPE* v, FP_TYPE by, int clear)
+void inc_fp_type(FP_TYPE* v, FP_TYPE by, int clear)
+{
+    *v += by;
+    if (clear) clear_counters();
+}
+
+void dec_float(float* v, float by, float min, int clear)
+{
+    *v -= by;
+    if (*v < min) *v = min;
+    if (clear) clear_counters();
+}
+
+void inc_float(float* v, float by, int clear)
 {
     *v += by;
     if (clear) clear_counters();
@@ -227,9 +244,9 @@ void change_fractal_params(int kl, int mod_kl)
         break;
     case 'e':
         if (mod)
-            dec_float(&er, 0.1, 0.1, 1);
+            dec_fp_type(&er, 0.1, 0.1, 1);
         else
-            inc_float(&er, 0.1, 1);
+            inc_fp_type(&er, 0.1, 1);
         break;
     case '2':
         gws_x *= 2;
@@ -300,6 +317,30 @@ void change_fractal_colors(int kl, int mod_kl)
             draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
         }
         break;
+    case 'h':
+        if (mod)
+            dec_float(&c1[color_channel], 0.1, 0.0, 0);
+        else
+            inc_float(&c1[color_channel], 0.1, 0);
+        break;
+    case 'j':
+        if (mod)
+            dec_float(&c2[color_channel], 0.1, 0.0, 0);
+        else
+            inc_float(&c2[color_channel], 0.1, 0);
+        break;
+    case 'k':
+        if (mod)
+            dec_float(&c3[color_channel], 0.1, 0.0, 0);
+        else
+            inc_float(&c3[color_channel], 0.1, 0);
+        break;
+    case 'l':
+        if (mod)
+            dec_float(&c4[color_channel], 0.1, 0.0, 0);
+        else
+            inc_float(&c4[color_channel], 0.1, 0);
+        break;
     }
 }
 
@@ -312,48 +353,48 @@ int move_fractal(int kl, int mod_kl)
     switch (kl)
     {
     case SDLK_LEFT:
-        dec_float(&szx, 0.01 / zoom, 0.1, 1);
+        dec_fp_type(&szx, 0.01 / zoom, 0.1, 1);
         key = 1;
         break;
     case SDLK_RIGHT:
-        inc_float(&szx, 0.01 / zoom, 1);
+        inc_fp_type(&szx, 0.01 / zoom, 1);
         key = 1;
         break;
     case SDLK_DOWN:
-        dec_float(&szy, 0.01 / zoom, 0.1, 1);
+        dec_fp_type(&szy, 0.01 / zoom, 0.1, 1);
         key = 1;
         break;
     case SDLK_UP:
-        inc_float(&szy, 0.01 / zoom, 1);
+        inc_fp_type(&szy, 0.01 / zoom, 1);
         key = 1;
         break;
     case 'a':
-        inc_float(&dx, -0.1 / zoom, 0);
+        inc_fp_type(&dx, -0.1 / zoom, 0);
         key = 1;
         break;
     case 'd':
-        inc_float(&dx, 0.1 / zoom, 0);
+        inc_fp_type(&dx, 0.1 / zoom, 0);
         key = 1;
         break;
     case 's':
-        inc_float(&dy, -0.1 / zoom, 0);
+        inc_fp_type(&dy, -0.1 / zoom, 0);
         key = 1;
         break;
     case 'w':
-        inc_float(&dy, 0.1 / zoom, 0);
+        inc_fp_type(&dy, 0.1 / zoom, 0);
         key = 1;
         break;
     case '8':
         if (mod)
         {
-            inc_float(&szx, 1.0, 0);
-            inc_float(&szy, 1.0, 1);
+            inc_fp_type(&szx, 1.0, 0);
+            inc_fp_type(&szy, 1.0, 1);
             key = 1;
         }
         break;
     case '/':
-        dec_float(&szx, 1.0, 1.0, 0);
-        dec_float(&szy, 1.0, 1.0, 0);
+        dec_fp_type(&szx, 1.0, 1.0, 0);
+        dec_fp_type(&szy, 1.0, 1.0, 0);
         key = 1;
         break;
     case 'x':
@@ -367,6 +408,19 @@ int move_fractal(int kl, int mod_kl)
             c_y -= 0.001;
         else
             c_y += 0.001;
+        break;
+    case 'r':
+        ofs_lx = OFS_LX;
+        ofs_rx = OFS_RX;
+        ofs_ty = 1.5f;
+        ofs_by = -1.5f;
+        zoom = 1.0f;
+        dx = 0;
+        dy = 0;
+        zx = 1.0f;
+        zy = 1.0f;
+        szx = 1.0f;
+        szy = 1.0f;
         break;
     }
     return key;
