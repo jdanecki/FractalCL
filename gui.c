@@ -107,6 +107,8 @@ void draw_box(int x, int y, int w, int h, int r, int g, int b)
     SDL_RenderFillRect(main_window, &dst);
 }
 
+void clear_window() { draw_box(0, 0, WIDTH, HEIGHT, 0, 0, 0); }
+
 void draw_double(int y, char* txt, double val)
 {
     char buf[256];

@@ -29,6 +29,7 @@ int init_window();
 void write_text(const char* t, int x, int y);
 unsigned long get_time_usec();
 void draw_box(int x, int y, int w, int h, int r, int g, int b);
+void clear_window();
 
 void draw_double(int y, char* txt, double val);
 void draw_int(int y, char* txt, int val);

@@ -16,13 +16,37 @@
 */
 
 #include "gui.h"
+double lx = -1.0f;
+double ty = 1.0f;
+double size_x = 2.0f;
+double size_y = 2.0f;
 
-#define ITERATIONS 3000
+unsigned int get_iter(double z_x, double z_y)
+{
+    unsigned int iter = 0;
+    double j_x, j_y;
+    double er = 4;
+    double d;
+
+    while (iter < 300)
+    {
+        j_x = z_x * z_x - z_y * z_y + 0.15f;
+        j_y = 2.0f * z_x * z_y - 0.6f;
+
+        d = (j_x * j_x + j_y * j_y);
+        if (d > er) break;
+
+        z_x = j_x;
+        z_y = j_y;
+        iter++;
+    }
+    return iter;
+}
 
 int main()
 {
     unsigned int* pixels;
-    int x, y, i = 0, r, g, b;
+    int x, y, i, iter = 0;
     char status_line[200];
     unsigned long render_time = 0, render_times = 0, avg, fps;
     unsigned long tp1, tp2;
@@ -32,17 +56,9 @@ int main()
 
     init_window();
 
-    for (y = 0; y < HEIGHT; y++)
-    {
-        for (x = 0; x < WIDTH; x++)
-        {
-            r = 0x80 + 0x7f * sin(6.28 * x / WIDTH);
-            g = 0x80 + 0x7f * sin(6.28 * y / HEIGHT);
-            b = 0x80 + 0x7f * cos(6.28 * (x + y) / (WIDTH + HEIGHT));
+    double px = 0;
+    double py = 0;
 
-            pixels[y * WIDTH + x] = r << 16 | g << 8 | b;
-        }
-    }
     int mx = 0, my = 0;
 
     SDL_Rect window_rec;
@@ -70,6 +86,27 @@ int main()
                 case 27:
                     fin = 1;
                     break;
+                case '=':
+                    lx /= 2;
+                    size_x /= 2.0f;
+                    size_y /= 2.0f;
+                    break;
+                case '-':
+                    lx *= 2.0f;
+                    size_y *= 2.0f;
+                    break;
+                case 'a':
+                    lx -= size_x / 3.0f;
+                    break;
+                case 'd':
+                    lx += size_x / 3.0f;
+                    break;
+                case 'w':
+                    ty -= size_y / 3.0f;
+                    break;
+                case 's':
+                    ty += size_y / 3.0f;
+                    break;
                 }
             }
             if (event.type == SDL_MOUSEMOTION)
@@ -80,23 +117,54 @@ int main()
             }
         }
         tp1 = get_time_usec();
-        /*
-                for (y = 0 ; y < 20; y++)  {
-                    for (x = 0 ; x < 20; x++) {
-                        unsigned int ofs = (my - 10 + y) * WIDTH + (mx - 10 + x);
-                        if (ofs > 0 && ofs < WIDTH *HEIGHT)
-                            pixels[ofs]++;
-                    }
-                }
-        */
+
+        for (y = 0; y < HEIGHT; y++)
+        {
+            for (x = 0; x < WIDTH; x++)
+            {
+                double z_x, z_y;
+                unsigned int c = 0;
+
+                z_x = lx + size_x * x / WIDTH;
+                z_y = ty - size_y * y / HEIGHT;
+
+                c = get_iter(z_x, z_y);
+                pixels[y * WIDTH + x] = c;
+            }
+        }
+
         SDL_UpdateTexture(texture, NULL, pixels, WIDTH * 4);
         //        SDL_RenderCopy(main_window, texture, NULL, NULL);
         SDL_RenderCopy(main_window, texture, NULL, &window_rec);
 
         avg = i ? render_times / i : 0;
         fps = avg ? 1000000 / avg : 0;
-        sprintf(status_line, "test SDL[%d,%d]=%x %d render time=%lu avg=%lu fps=%lu", mx, my, pixels[my * WIDTH + mx], i, render_time, avg, fps);
-        write_text(status_line, 0, HEIGHT / 2);
+
+        sprintf(status_line, "x:%1.20f", px);
+        write_text(status_line, WIDTH, 0);
+
+        sprintf(status_line, "y:%1.20f", py);
+        write_text(status_line, WIDTH, 20);
+
+        sprintf(status_line, "%1.20f", size_x);
+        write_text(status_line, WIDTH, 40);
+
+        sprintf(status_line, "%1.20f", size_y);
+        write_text(status_line, WIDTH, 60);
+
+        px = lx + size_x * mx / WIDTH;
+        py = ty - size_y * my / HEIGHT;
+        iter = get_iter(px, py);
+
+        sprintf(status_line, "iter=%d ", iter);
+        write_text(status_line, WIDTH, 80);
+
+        //		sprintf(status_line, "render=%lu avg=%lu ", render_time, avg);
+        //      write_text(status_line, WIDTH, 20);
+
+        //		sprintf(status_line, "fps=%lu ", fps);
+        //      write_text(status_line, WIDTH, 40);
+
         SDL_RenderPresent(main_window);
         tp2 = get_time_usec();
         render_time = tp2 - tp1;

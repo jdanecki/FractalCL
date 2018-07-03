@@ -17,44 +17,81 @@
 
 #include "gui.h"
 
-#define ITERATIONS 3000
+#include <SDL2_framerate.h>
+#include <SDL2_gfxPrimitives.h>
+
+#define ITERATIONS 10000
+#define SIZE 10
+
+struct circle_data
+{
+    int x, y, dir_x, dir_y;
+    unsigned int color;
+} circles[ITERATIONS];
+
+void draw_circle(int i)
+{
+    int x = circles[i].x;
+    int y = circles[i].y;
+    int dir_x = circles[i].dir_x;
+    int dir_y = circles[i].dir_y;
+
+    if (!x)
+    {
+        x = random() % (WIDTH - SIZE);
+        dir_x = -1 - random() % 3;
+        if (!dir_x) dir_x = 1;
+        circles[i].color = random();
+    }
+    if (!y)
+    {
+        y = random() % (HEIGHT - SIZE);
+        dir_y = -1 - random() % 3;
+        if (!dir_y) dir_y = -dir_x;
+    }
+
+    filledCircleColor(main_window, x, y, SIZE, circles[i].color);
+    x += dir_x;
+    y += dir_y;
+
+    if (x > WIDTH - SIZE) dir_x *= -1;
+    if (x < SIZE) dir_x *= -1;
+    if (y > HEIGHT - SIZE) dir_y *= -1;
+    if (y < SIZE) dir_y *= -1;
+
+    circles[i].x = x;
+    circles[i].y = y;
+    circles[i].dir_x = dir_x;
+    circles[i].dir_y = dir_y;
+}
 
 int main()
 {
     unsigned int* pixels;
-    int x, y, i = 0, r, g, b;
+    int i, c;
     char status_line[200];
     unsigned long render_time = 0, render_times = 0, avg, fps;
     unsigned long tp1, tp2;
-    int fin = 0;
+    FPSmanager fps_manager;
+
+    srandom(time(0));
 
     if (posix_memalign((void**)&pixels, 4096, IMAGE_SIZE)) return 1;
 
     init_window();
 
-    for (y = 0; y < HEIGHT; y++)
+    SDL_initFramerate(&fps_manager);
+    SDL_setFramerate(&fps_manager, 200);
+
+    int fin = 0;
+    //    int mx = 0, my =0;
+
+    for (i = 0; i < ITERATIONS; i++)
     {
-        for (x = 0; x < WIDTH; x++)
-        {
-            r = 0x80 + 0x7f * sin(6.28 * x / WIDTH);
-            g = 0x80 + 0x7f * sin(6.28 * y / HEIGHT);
-            b = 0x80 + 0x7f * cos(6.28 * (x + y) / (WIDTH + HEIGHT));
+        if (fin) break;
 
-            pixels[y * WIDTH + x] = r << 16 | g << 8 | b;
-        }
-    }
-    int mx = 0, my = 0;
-
-    SDL_Rect window_rec;
-
-    window_rec.w = WIDTH;
-    window_rec.h = HEIGHT;
-    window_rec.x = 0;
-    window_rec.y = 0;
-
-    while (!fin)
-    {
         SDL_Event event;
+
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -72,36 +109,28 @@ int main()
                     break;
                 }
             }
-            if (event.type == SDL_MOUSEMOTION)
-            {
-                if (event.button.x > WIDTH) continue;
-                mx = event.button.x;
-                my = event.button.y;
-            }
+            /*				if (event.type == SDL_MOUSEMOTION)
+                            {
+                                if (event.button.x > WIDTH) continue;
+                                mx = event.button.x;
+                                my = event.button.y;
+                            }*/
         }
+
         tp1 = get_time_usec();
-        /*
-                for (y = 0 ; y < 20; y++)  {
-                    for (x = 0 ; x < 20; x++) {
-                        unsigned int ofs = (my - 10 + y) * WIDTH + (mx - 10 + x);
-                        if (ofs > 0 && ofs < WIDTH *HEIGHT)
-                            pixels[ofs]++;
-                    }
-                }
-        */
-        SDL_UpdateTexture(texture, NULL, pixels, WIDTH * 4);
-        //        SDL_RenderCopy(main_window, texture, NULL, NULL);
-        SDL_RenderCopy(main_window, texture, NULL, &window_rec);
+        clear_window();
+        for (c = 0; c < i; c++) draw_circle(c);
 
         avg = i ? render_times / i : 0;
         fps = avg ? 1000000 / avg : 0;
-        sprintf(status_line, "test SDL[%d,%d]=%x %d render time=%lu avg=%lu fps=%lu", mx, my, pixels[my * WIDTH + mx], i, render_time, avg, fps);
+        sprintf(status_line, "test SDL: %d/%d render time=%lu avg=%lu fps=%lu/%3d ", i, ITERATIONS, render_time, avg, fps, SDL_getFramerate(&fps_manager));
         write_text(status_line, 0, HEIGHT / 2);
         SDL_RenderPresent(main_window);
+        SDL_framerateDelay(&fps_manager);
+
         tp2 = get_time_usec();
         render_time = tp2 - tp1;
         render_times += render_time;
-        i++;
     }
     fps = 1000000 / avg;
     printf("avg time=%lu fps=%lu\n", render_times / i, fps);
