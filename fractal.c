@@ -443,63 +443,63 @@ unsigned long calculate_avg_time(unsigned long* exec_time)
 
 void draw_right_panel(int column)
 {
-    int raw = 0;
+    int row = 0;
     unsigned long exec_time;
     unsigned long avg, r_avg;
 
-    draw_string(raw++, "===", " Main ====");
-    draw_int(raw++, "F1-F7 fractal", fractal);
+    draw_string(row++, "===", " Main ====");
+    draw_int(row++, "F1-F7 fractal", fractal);
 #ifdef OPENCL_SUPPORT
-    draw_int(raw++, "v device", cur_dev);
+    draw_int(row++, "v device", cur_dev);
 #endif
-    //    draw_int(raw++, "1 show_z", show_z);
-    draw_double(raw++, "lx", lx);
-    draw_double(raw++, "rx", rx);
-    draw_double(raw++, "ty", ty);
-    draw_double(raw++, "by", by);
+    //    draw_int(row++, "1 show_z", show_z);
+    draw_double(row++, "lx", lx);
+    draw_double(row++, "rx", rx);
+    draw_double(row++, "ty", ty);
+    draw_double(row++, "by", by);
 
-    draw_string(raw++, "==", " Parameters ===");
-    draw_int(raw++, "i/I iter", max_iter);
-    draw_double(raw++, "e/E er", er);
-    draw_double(raw++, "x/X c_x", c_x);
-    draw_double(raw++, "y/Y c_y", c_y);
+    draw_string(row++, "==", " Parameters ===");
+    draw_int(row++, "i/I iter", max_iter);
+    draw_double(row++, "e/E er", er);
+    draw_double(row++, "x/X c_x", c_x);
+    draw_double(row++, "y/Y c_y", c_y);
     /*#ifdef OPENCL_SUPPORT
-        draw_int(raw++, "2/3 gws_x", gws_x);
-        draw_int(raw++, "2/3 gws_y", gws_y);
+        draw_int(row++, "2/3 gws_x", gws_x);
+        draw_int(row++, "2/3 gws_y", gws_y);
     #endif*/
-    draw_double(raw++, "zoom", zoom);
-    draw_double(raw++, "LB/RB zx", zx);
-    draw_double(raw++, "LB/RB zy", zy);
+    draw_double(row++, "zoom", zoom);
+    draw_double(row++, "LB/RB zx", zx);
+    draw_double(row++, "LB/RB zy", zy);
 
-    draw_string(raw++, "P ", " Colors ==");
-    draw_int(raw++, "p pal", pal);
+    draw_string(row++, "P ", " Colors ==");
+    draw_int(row++, "p pal", pal);
 
-    draw_hex(raw++, "c/C channel", color_channel);
-    draw_hex(raw++, "+/= rgb +-1", rgb);
-    draw_hex(raw++, "_/- rgb +-16", rgb);
-    draw_hex(raw++, "m/M mm +-1", mm);
+    draw_hex(row++, "c/C channel", color_channel);
+    draw_hex(row++, "+/= rgb +-1", rgb);
+    draw_hex(row++, "_/- rgb +-16", rgb);
+    draw_hex(row++, "m/M mm +-1", mm);
 
-    draw_double(raw++, "h/H c1", c1[color_channel]);
-    draw_double(raw++, "j/J c2", c2[color_channel]);
-    draw_double(raw++, "k/K c3", c3[color_channel]);
-    draw_double(raw++, "l/L c4", c4[color_channel]);
+    draw_double(row++, "h/H c1", c1[color_channel]);
+    draw_double(row++, "j/J c2", c2[color_channel]);
+    draw_double(row++, "k/K c3", c3[color_channel]);
+    draw_double(row++, "l/L c4", c4[color_channel]);
 
-    draw_string(raw++, "===", " Moves ====");
-    draw_double(raw++, "Left/Right szx", szx);
-    draw_double(raw++, "Down/Up szy", szy);
-    draw_double(raw++, "*// szx", szx);
-    draw_double(raw++, "*// szy", szy);
-    draw_double(raw++, "a/d dx", dx);
-    draw_double(raw++, "w/s dy", dy);
+    draw_string(row++, "===", " Moves ====");
+    draw_double(row++, "Left/Right szx", szx);
+    draw_double(row++, "Down/Up szy", szy);
+    draw_double(row++, "*// szx", szx);
+    draw_double(row++, "*// szy", szy);
+    draw_double(row++, "a/d dx", dx);
+    draw_double(row++, "w/s dy", dy);
 
-    draw_string(raw++, "SPACE", " Benchmarking [us]");
-    draw_long(raw++, "time", frames_time / draw_frames);
+    draw_string(row++, "SPACE", " Benchmarking [us]");
+    draw_long(row++, "time", frames_time / draw_frames);
     avg = calculate_avg_time(&exec_time);
 
-    draw_2long(raw++, "exec", exec_time, "avg", avg);
+    draw_2long(row++, "exec", exec_time, "avg", avg);
     last_avg_result = avg;
     r_avg = flips ? render_times / flips : 0;
-    draw_2long(raw++, "render", render_time, "avg", r_avg);
+    draw_2long(row++, "render", render_time, "avg", r_avg);
 
     if (performance_test)
     {
