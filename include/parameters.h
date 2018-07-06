@@ -39,7 +39,6 @@ extern FP_TYPE er;
 extern unsigned int max_iter;
 extern int pal;
 extern int palette;
-extern int show_z;
 extern FP_TYPE c_x;
 extern FP_TYPE c_y;
 extern enum fractals fractal;

@@ -56,7 +56,6 @@ float c4[3] = {0.0f, 0.33f, 0.66f};
 unsigned int max_iter = 360;
 int pal;     // 0=hsv 1,...=rgb
 int palette; // 1 - show palette
-int show_z;
 FP_TYPE c_x = 0.15f;
 FP_TYPE c_y = -0.60f;
 // FP_TYPE c_x = -0.7f;
@@ -157,6 +156,9 @@ void select_fractal(int f)
     case GENERALIZED_CELTIC:
         set_fractal(GENERALIZED_CELTIC, 4);
         break;
+    case TRICORN:
+        set_fractal(TRICORN, 4);
+        break;
     }
 }
 
@@ -187,6 +189,9 @@ void select_fractals(int k)
         break;
     case SDLK_F7:
         select_fractal(GENERALIZED_CELTIC);
+        break;
+    case SDLK_F8:
+        select_fractal(TRICORN);
         break;
     }
 }
@@ -248,22 +253,22 @@ void change_fractal_params(int kl, int mod_kl)
         else
             inc_fp_type(&er, 0.1, 1);
         break;
-    case '2':
-        gws_x *= 2;
-        if (gws_x > WIDTH) gws_x = WIDTH;
-        gws_y *= 2;
-        if (gws_y > HEIGHT) gws_y = HEIGHT;
-        printf("gws: x=%d y=%d\n", gws_x, gws_y);
-        clear_counters();
-        break;
-    case '3':
-        gws_x /= 2;
-        if (gws_x < 8) gws_x = 8;
-        gws_y /= 2;
-        if (gws_y < 8) gws_y = 8;
-        printf("gws: x=%d y=%d\n", gws_x, gws_y);
-        clear_counters();
-        break;
+        /*    case '2':
+                gws_x *= 2;
+                if (gws_x > WIDTH) gws_x = WIDTH;
+                gws_y *= 2;
+                if (gws_y > HEIGHT) gws_y = HEIGHT;
+                printf("gws: x=%d y=%d\n", gws_x, gws_y);
+                clear_counters();
+                break;
+            case '3':
+                gws_x /= 2;
+                if (gws_x < 8) gws_x = 8;
+                gws_y /= 2;
+                if (gws_y < 8) gws_y = 8;
+                printf("gws: x=%d y=%d\n", gws_x, gws_y);
+                clear_counters();
+                break;*/
     }
 }
 

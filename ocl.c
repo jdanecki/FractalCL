@@ -23,7 +23,7 @@ volatile int nr_devices;
 struct ocl_device* ocl_devices;
 int current_device;
 struct ocl_fractal fractals[NR_FRACTALS];
-struct ocl_fractal test_fractal;
+struct ocl_fractal test_fractal, common_functions;
 extern int quiet;
 
 int create_ocl_device(int di, char* plat_name, cl_platform_id id)
@@ -179,9 +179,9 @@ int create_kernels(struct ocl_device* dev, char* options)
     size_t size;
     char* log;
 
-    char* sources[NR_FRACTALS + 1]; // one more for test_kernel
+    char* sources[NR_FRACTALS + 2]; // 1 more for test_kernel, 1 for common.cl
     char cl_options[1024];
-    size_t filesizes[NR_FRACTALS + 1];
+    size_t filesizes[NR_FRACTALS + 2];
     if (!dev->initialized) return 0;
 
     if (!quiet) printf("prepare kernels for %s\n", dev->name);
@@ -195,10 +195,13 @@ int create_kernels(struct ocl_device* dev, char* options)
     sources[i] = test_fractal.source;
     filesizes[i] = test_fractal.filesize;
 
+    sources[i + 1] = common_functions.source;
+    filesizes[i + 1] = common_functions.filesize;
+
     sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
                         "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
             options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "", STRING_MACRO(DATA_PATH));
-    dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 1, (const char**)sources, filesizes, &err);
+    dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 2, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)
     {
         printf("%s: clCreateProgramWithSource returned %d\n", dev->name, err);
@@ -234,6 +237,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     if (create_kernel(dev, &fractals[JULIA3], &dev->kernels[JULIA3])) return 1;
     if (create_kernel(dev, &fractals[BURNING_SHIP], &dev->kernels[BURNING_SHIP])) return 1;
     if (create_kernel(dev, &fractals[GENERALIZED_CELTIC], &dev->kernels[GENERALIZED_CELTIC])) return 1;
+    if (create_kernel(dev, &fractals[TRICORN], &dev->kernels[TRICORN])) return 1;
 
     if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
 
@@ -319,8 +323,10 @@ int init_ocl()
     open_fractal(&fractals[JULIA3], "julia3");
     open_fractal(&fractals[BURNING_SHIP], "burning_ship");
     open_fractal(&fractals[GENERALIZED_CELTIC], "generalized_celtic");
+    open_fractal(&fractals[TRICORN], "tricorn");
 
     open_fractal(&test_fractal, "test_kernel");
+    open_fractal(&common_functions, "common");
 
     for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w");
 
@@ -376,6 +382,7 @@ int close_ocl()
         close_fractal(&fractals[i]);
     }
     close_fractal(&test_fractal);
+    close_fractal(&common_functions);
     return 0;
 }
 

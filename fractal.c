@@ -23,12 +23,14 @@
 #endif
 
 #include "kernels/burning_ship.cl"
+#include "kernels/common.cl"
 #include "kernels/dragon.cl"
 #include "kernels/generalized_celtic.cl"
 #include "kernels/julia.cl"
 #include "kernels/julia3.cl"
 #include "kernels/julia_full.cl"
 #include "kernels/mandelbrot.cl"
+#include "kernels/tricorn.cl"
 
 #include "parameters.h"
 
@@ -50,7 +52,7 @@ int performance_test;
 unsigned long last_avg_result;
 int console_mode;
 
-char* fractals_names[NR_FRACTALS] = {"julia z^2", "mandelbrot", "julia full", "dragon", "julia z^3", "burning ship", "generalized celtic"};
+char* fractals_names[NR_FRACTALS] = {"julia z^2", "mandelbrot", "julia full", "dragon", "julia z^3", "burning ship", "generalized celtic", "tricorn"};
 
 enum app_modes
 {
@@ -306,7 +308,6 @@ void prepare_cpu_args()
     cpu_kernel_args.er = er;
     cpu_kernel_args.max_iter = max_iter;
     cpu_kernel_args.pal = pal;
-    cpu_kernel_args.show_z = show_z;
     cpu_kernel_args.c_x = c_x;
     cpu_kernel_args.c_y = c_y;
 
@@ -316,6 +317,36 @@ void prepare_cpu_args()
         cpu_kernel_args.c2[c] = c2[c];
         cpu_kernel_args.c3[c] = c3[c];
         cpu_kernel_args.c4[c] = c4[c];
+    }
+}
+
+unsigned int calculate_one_pixel(int x, int y)
+{
+    switch (fractal)
+    {
+    case JULIA:
+        return julia(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    case JULIA3:
+        return julia3(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    case JULIA_FULL:
+        return julia_full(x, y, cpu_pixels, colors, cpu_kernel_args);
+
+    case MANDELBROT:
+        return mandelbrot(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    case BURNING_SHIP:
+        return burning_ship(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    case GENERALIZED_CELTIC:
+        return generalized_celtic(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    case TRICORN:
+        return tricorn(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
+
+    default:
+        return 0;
     }
 }
 
@@ -330,29 +361,7 @@ void* execute_fractal_cpu(void* c)
     {
         for (x = cpu->xs; x < cpu->xe; x++)
         {
-            switch (fractal)
-            {
-            case JULIA:
-                julia(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            case JULIA3:
-                julia3(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            case JULIA_FULL:
-                julia_full(x, y, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            case MANDELBROT:
-                mandelbrot(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            case BURNING_SHIP:
-                burning_ship(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            case GENERALIZED_CELTIC:
-                generalized_celtic(cpu_kernel_args.ofs_x + x * 4, cpu_kernel_args.ofs_y + y * 4, cpu_pixels, colors, cpu_kernel_args);
-                break;
-            default:
-                return NULL;
-            }
+            calculate_one_pixel(x, y);
         }
     }
     return NULL;
@@ -448,11 +457,10 @@ void draw_right_panel(int column)
     unsigned long avg, r_avg;
 
     draw_string(row++, "===", " Main ====");
-    draw_int(row++, "F1-F7 fractal", fractal);
+    draw_int(row++, "F1-F8 fractal", fractal);
 #ifdef OPENCL_SUPPORT
     draw_int(row++, "v device", cur_dev);
 #endif
-    //    draw_int(row++, "1 show_z", show_z);
     draw_double(row++, "lx", lx);
     draw_double(row++, "rx", rx);
     draw_double(row++, "ty", ty);
@@ -742,7 +750,9 @@ void gui_loop()
                 column %= WIDTH;
             }
 
-            sprintf(status_line, "[%2.20f,%2.20f] %s: %s", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal]);
+            prepare_cpu_args();
+            sprintf(status_line, "[%2.20f,%2.20f] %s: %s iter=%d", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal],
+                    calculate_one_pixel(m1x / 4, m1y / 4));
             write_text(status_line, 0, HEIGHT - FONT_SIZE);
 #ifdef OPENCL_SUPPORT
             if (cur_dev)
@@ -782,14 +792,15 @@ void gui_loop()
                 case SDLK_F5:
                 case SDLK_F6:
                 case SDLK_F7:
+                case SDLK_F8:
                     select_fractals(kl);
                     break;
                 case 27:
                     return;
                 case 'i':
                 case 'e':
-                case '2':
-                case '3':
+                    //              case '2':
+                    //              case '3':
                     change_fractal_params(kl, event.key.keysym.mod);
                     break;
                 case 'c':
@@ -819,9 +830,6 @@ void gui_loop()
                     key = move_fractal(kl, event.key.keysym.mod);
                     break;
 
-                case '1':
-                    show_z ^= 1;
-                    break;
 #ifdef OPENCL_SUPPORT
                 case 'v':
 

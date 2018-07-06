@@ -31,7 +31,6 @@ struct kernel_args64
     double er;
     unsigned int max_iter;
     int pal;
-    int show_z;
     double c_x, c_y;
     int ofs_x, ofs_y;
     float c1[3], c2[3], c3[3], c4[3];
@@ -50,10 +49,22 @@ struct kernel_args32
     float er;
     unsigned int max_iter;
     int pal;
-    int show_z;
     float c_x, c_y;
     int ofs_x, ofs_y;
     float c1[3], c2[3], c3[3], c4[3];
 };
+
+#ifdef FP_64_SUPPORT
+#define FP_TYPE double
+#define KERNEL_ARGS kernel_args64
+#else
+#define FP_TYPE float
+#define KERNEL_ARGS kernel_args32
+#endif
+
+#ifdef HOST_APP
+#define __global
+#endif
+unsigned int set_color(struct KERNEL_ARGS args, unsigned int i, __global unsigned int* colors);
 
 #endif

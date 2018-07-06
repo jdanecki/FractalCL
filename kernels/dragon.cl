@@ -1,11 +1,3 @@
-#ifdef FP_64_SUPPORT
-#define FP_TYPE double
-#define KERNEL_ARGS kernel_args64
-#else
-#define FP_TYPE float
-#define KERNEL_ARGS kernel_args32
-#endif
-
 #include "fractal_types.h"
 
 #ifdef HOST_APP

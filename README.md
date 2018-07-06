@@ -54,12 +54,10 @@ Discover and explore fractals world with OpenCL acceleration.
 * F5 - select Julia
 * F6 - select burning ship
 * F7 - select generalized celtic
+* F8 - select tricorn
 * v - change device used for calculation:
       0 = CPU
       1,..., n = OpenCL device
-* 1 - show calculated complex number
-* 2 - multiply gws (global workgroup size) by 2
-* 3 - divide gws (global workgroup size) by 2
 
 # Implemented fractals
 
@@ -97,6 +95,13 @@ j_x = fabs(z_x * z_x - z_y * z_y) + c_x;
 j_y = 2 * z_x * z_y + c_y;
 ```
 ![generalized_celtic](generalized_celtic.png)
+
+* tricorn
+```
+j_x = z_x * z_x - z_y * z_y + c_x;
+j_y = -2 * z_x * z_y + c_y;
+```
+![tricorn](tricorn.png)
 
 * dragon
 ```
