@@ -1,0 +1,8 @@
+FROM docker.io/base/archlinux
+MAINTAINER Jacek Danecki <jacek.m.danecki@gmail.com>
+
+COPY FractalCL /root/FractalCL
+
+RUN pacman -Sy --noconfirm git gcc cmake make sdl2 sdl2_gfx sdl2_ttf ocl-icd opencl-headers pkgconfig
+RUN cd /root/FractalCL; ./configure && make && make install && FractalCL -c -i 1000 && cd tests && make
+CMD ["/bin/bash"]
