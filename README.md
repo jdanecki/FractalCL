@@ -112,7 +112,7 @@ y1 = 0.4 * xc + 0.76 * yc;
 
 # Dependencies
 
-* SDL2, SDL2_TTF libraries
+* SDL2, SDL2_TTF, SDL2_GFX libraries
 * OpenCL library (optional)
 
 # Build and install instruction
