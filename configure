@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=0.0.1
+VERSION=0.0.2
 
 #support for fp64 extention is enabled by default
 #float will be used if device doesn't support cl_khr_fp64
