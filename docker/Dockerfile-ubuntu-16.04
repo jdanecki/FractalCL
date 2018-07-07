@@ -1,0 +1,8 @@
+FROM docker.io/ubuntu:16.04
+MAINTAINER Jacek Danecki <jacek.m.danecki@gmail.com>
+
+COPY FractalCL /root/FractalCL
+
+RUN apt-get update -y; apt-get install -y git gcc libsdl2-dev libsdl2-ttf-dev  libsdl2-gfx-dev ocl-icd-opencl-dev cmake
+RUN cd /root/FractalCL; ./configure && make && make install && FractalCL -c -i 1000 && cd tests && make
+CMD ["/bin/bash"]
