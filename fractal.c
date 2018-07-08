@@ -653,7 +653,12 @@ void show_perf_result()
         show_ocl_device(current_device);
     }
 #endif
-
+    printf("Kernel: ");
+    fflush(stdout);
+    system("uname -r");
+    printf("--- CPU info ---\n");
+    fflush(stdout);
+    system("lscpu");
     printf("--- performance results --- \n");
     printf("avg exec time: %lu [us]\n", last_avg_result);
     puts("***********************************************************");
