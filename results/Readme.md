@@ -16,8 +16,8 @@ with FP_64_SUPPORT=OFF because not all OpenCL implementations provide working su
 | Intel  | i7-8700K  | CFL GT2     | Beignet 1.4     | OCL GPU     | 248    |
 | Intel  | i5-6260U  | SKL GT3     | Neo 1.0         | OCL GPU     | 251    |
 | Intel  | i5-6260U  | SKL GT3     | Beignet 1.2     | OCL GPU     | 265    |
-| Intel  | i5-6500   | SKL GT2     | Neo 1.0         | OCL GPU     | 284    |
 | Nvidia |           | GTX 770     | 390.48          | OCL GPU CUDA| 270    |
+| Intel  | i5-6500   | SKL GT2     | Neo 1.0         | OCL GPU     | 284    |
 | Intel  | i5-4200M  | HSW GT2     | Beignet 1.4     | OCL GPU     | 353    |
 | Intel  | i7-7820HQ | KBL GT2     | Beignet 1.3     | OCL GPU     | 355    |
 | Intel  | i7-6770HQ | SKL GT4     | Neo 18.25.10965 | OCL GPU     | 499    |
