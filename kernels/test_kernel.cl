@@ -1,4 +1,4 @@
-extern int test_function();
+extern int test_function(void);
 
 __kernel void test_kernel()
 {

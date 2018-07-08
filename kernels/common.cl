@@ -1,6 +1,6 @@
 #include "fractal_types.h"
 
-int test_function() { return 123; }
+int test_function(void) { return 123; }
 
 unsigned int set_color(struct KERNEL_ARGS args, unsigned int i, __global unsigned int* colors)
 {
