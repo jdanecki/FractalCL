@@ -18,6 +18,7 @@
 #ifndef __FRACTAL_TYPES__
 #define __FRACTAL_TYPES__
 
+#ifdef FP_64_SUPPORT
 struct kernel_args64
 {
     unsigned int rgb;
@@ -35,7 +36,7 @@ struct kernel_args64
     int ofs_x, ofs_y;
     float c1[3], c2[3], c3[3], c4[3];
 };
-
+#endif
 struct kernel_args32
 {
     unsigned int rgb;

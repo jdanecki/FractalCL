@@ -74,6 +74,7 @@ int set_kernel_arg(cl_kernel kernel, char* name, int i, int size, void* arg)
     return 0;
 }
 
+#ifdef FP_64_SUPPORT
 void prepare_kernel_args64(struct kernel_args64* args)
 {
     FP_TYPE ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
@@ -125,7 +126,7 @@ void prepare_kernel_args64(struct kernel_args64* args)
         args->ofs_y = 0;
     }
 }
-
+#endif
 void prepare_kernel_args32(struct kernel_args32* args)
 {
     float ofs_lx1, ofs_rx1, ofs_ty1, ofs_by1;
@@ -192,6 +193,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels)) return 1;
     if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors)) return 1;
 
+#ifdef FP_64_SUPPORT
     if (dev->fp64)
     {
         struct kernel_args64* args64 = &dev->args64[fractal];
@@ -199,6 +201,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
         if (set_kernel_arg(kernel, name, 2, sizeof(*args64), args64)) return 1;
     }
     else
+#endif
     {
         struct kernel_args32* args32 = &dev->args32[fractal];
         prepare_kernel_args32(args32);
