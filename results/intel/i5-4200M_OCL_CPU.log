@@ -1,0 +1,12 @@
+starting performance test with 32000 iterations for device: 0
+***********************************************************
+name:           Intel(R) Core(TM) i5-4200M CPU @ 2.50GHz
+vendor:         Intel(R) Corporation
+device version: OpenCL 1.2 (Build 37)
+driver version: 1.2.0.37
+ocl C version:  OpenCL C 1.2 
+type:           CPU
+extensions:     cl_khr_icd cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_depth_images cl_khr_3d_image_writes cl_intel_exec_by_local_thread cl_khr_spir cl_khr_fp64 cl_intel_vec_len_hint 
+--- performance results --- 
+avg exec time: 646 [us]
+***********************************************************

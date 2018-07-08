@@ -1,0 +1,24 @@
+starting performance test with 32000 iterations for device: 0
+***********************************************************
+name:           Intel(R) HD Graphics
+vendor:         Intel(R) Corporation
+device version: OpenCL 1.2 
+driver version: r5.0.63503
+ocl C version:  OpenCL C 1.2 
+type:           GPU
+extensions:     cl_intel_accelerator cl_intel_advanced_motion_estimation cl_intel_driver_diagnostics cl_intel_motion_estimation cl_intel_planar_yuv cl_intel_packed_yuv cl_intel_required_subgroup_size cl_intel_subgroups cl_intel_va_api_media_sharing cl_khr_3d_image_writes cl_khr_byte_addressable_store cl_khr_depth_images cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_icd cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_spir 
+--- performance results --- 
+avg exec time: 3058 [us]
+***********************************************************
+starting performance test with 32000 iterations for device: 1
+***********************************************************
+name:           Intel(R) HD Graphics Haswell GT2 Mobile
+vendor:         Intel
+device version: OpenCL 1.2 beignet 1.4 (git-7e181af2)
+driver version: 1.4
+ocl C version:  OpenCL C 1.2 beignet 1.4 (git-7e181af2)
+type:           GPU
+extensions:     cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_3d_image_writes cl_khr_image2d_from_buffer cl_khr_depth_images cl_khr_spir cl_khr_icd cl_intel_accelerator cl_intel_subgroups cl_intel_subgroups_short cl_intel_media_block_io cl_intel_planar_yuv
+--- performance results --- 
+avg exec time: 353 [us]
+***********************************************************
