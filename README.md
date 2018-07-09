@@ -117,14 +117,15 @@ y1 = 0.4 * xc + 0.76 * yc;
 
 # Dependencies
 
-* SDL2, SDL2_TTF, SDL2_GFX libraries
+* SDL2, SDL2_TTF libraries
 * OpenCL library (optional)
+* SDL2_GFX library - only for tests
 
 # Build and install instruction
 
 * Run 'configure' script to configure project
 * Run 'make' to build project
-* Run 'make install' to install application
+* Run 'sudo make install' to install application
 
 # Build configuration (configure script)
 
