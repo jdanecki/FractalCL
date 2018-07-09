@@ -456,6 +456,8 @@ void draw_right_panel(int column)
     unsigned long exec_time;
     unsigned long avg, r_avg;
 
+    draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
+
     draw_string(row++, "===", " Main ====");
     draw_int(row++, "F1-F8 fractal", fractal);
 #ifdef OPENCL_SUPPORT
@@ -783,6 +785,13 @@ void gui_loop()
 
         while (SDL_PollEvent(&event))
         {
+            //			printf("event = %d\n", event.type);
+            if (event.type == SDL_WINDOWEVENT)
+            {
+                draw = 1;
+                draw_frames = 16;
+            }
+
             if (event.type == SDL_QUIT) return;
             if (event.type == SDL_KEYDOWN)
             {
