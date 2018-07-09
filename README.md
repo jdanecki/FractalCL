@@ -58,6 +58,7 @@ Discover and explore fractals world with OpenCL acceleration.
 * v - change device used for calculation:
       0 = CPU
       1,..., n = OpenCL device
+* 1 - show iterations histogram
 
 # Implemented fractals
 

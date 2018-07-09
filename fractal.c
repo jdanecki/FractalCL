@@ -49,6 +49,7 @@ extern volatile int tasks_finished;
 #endif
 
 int performance_test;
+int show_iterations;
 unsigned long last_avg_result;
 int console_mode;
 
@@ -470,9 +471,11 @@ void draw_right_panel(int column)
 
     draw_string(row++, "==", " Parameters ===");
     draw_int(row++, "i/I iter", max_iter);
+    draw_string(row++, "1", " show iter. histogram");
     draw_double(row++, "e/E er", er);
     draw_double(row++, "x/X c_x", c_x);
     draw_double(row++, "y/Y c_y", c_y);
+    draw_string(row++, "r", " restart");
     /*#ifdef OPENCL_SUPPORT
         draw_int(row++, "2/3 gws_x", gws_x);
         draw_int(row++, "2/3 gws_y", gws_y);
@@ -539,6 +542,38 @@ void draw_right_panel(int column)
         SDL_SetRenderDrawColor(main_window, 128, 255, 128, 255);
         SDL_RenderFillRect(main_window, &dst);
     }
+}
+
+void show_iterations_window()
+{
+    int x, y, max_x, max_p = WIDTH * HEIGHT / 16;
+    unsigned int* iter_map;
+    unsigned int iter;
+
+    SDL_SetRenderDrawColor(main_window, 255, 255, 255, 255);
+
+    prepare_cpu_args();
+
+    max_x = max_iter > WIDTH ? WIDTH : max_iter;
+    iter_map = calloc(max_x, sizeof(iter));
+
+    for (y = 0; y < HEIGHT / 4; y++)
+    {
+        for (x = 0; x < WIDTH / 4; x++)
+        {
+            iter = calculate_one_pixel(x, y);
+            if (iter < max_x)
+            {
+                iter_map[iter]++;
+            }
+        }
+    }
+    for (x = 0; x < max_x; x++)
+    {
+        y = roundf(1.0f * (HEIGHT - 1) * iter_map[x] / max_p);
+        SDL_RenderDrawLine(main_window, x, 0, x, y);
+    }
+    free(iter_map);
 }
 
 void show_palette()
@@ -711,7 +746,6 @@ void gui_loop()
             draw_right_panel(column);
             show_palette();
         }
-
         if (draw || stop_animation)
         {
             stop_animation = 0;
@@ -722,7 +756,7 @@ void gui_loop()
             SDL_Delay(1);
         }
 
-        if (flip_window || performance_test)
+        if (flip_window || performance_test || show_iterations)
         {
             float m2x, m2y;
             unsigned long tp1, tp2;
@@ -769,6 +803,11 @@ void gui_loop()
                 write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
             }
 #endif
+            if (show_iterations)
+            {
+                show_iterations_window();
+            }
+
             SDL_RenderPresent(main_window);
             tp2 = get_time_usec();
             render_time = tp2 - tp1;
@@ -843,7 +882,9 @@ void gui_loop()
                 case 'r':
                     key = move_fractal(kl, event.key.keysym.mod);
                     break;
-
+                case '1':
+                    show_iterations ^= 1;
+                    break;
 #ifdef OPENCL_SUPPORT
                 case 'v':
 
