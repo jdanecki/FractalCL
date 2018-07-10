@@ -475,7 +475,6 @@ void draw_right_panel(int column)
     draw_double(row++, "e/E er", er);
     draw_double(row++, "x/X c_x", c_x);
     draw_double(row++, "y/Y c_y", c_y);
-    draw_string(row++, "r", " restart");
     /*#ifdef OPENCL_SUPPORT
         draw_int(row++, "2/3 gws_x", gws_x);
         draw_int(row++, "2/3 gws_y", gws_y);
@@ -550,7 +549,14 @@ void show_iterations_window()
     unsigned int* iter_map;
     unsigned int iter;
 
-    SDL_SetRenderDrawColor(main_window, 255, 255, 255, 255);
+    unsigned char* pixels;
+    int pitch;
+    SDL_Rect window_rec;
+
+    window_rec.w = WIDTH;
+    window_rec.h = HEIGHT;
+    window_rec.x = 0;
+    window_rec.y = 0;
 
     prepare_cpu_args();
 
@@ -568,11 +574,25 @@ void show_iterations_window()
             }
         }
     }
+
+    SDL_LockTexture(texture, NULL, (void**)&pixels, &pitch);
+
     for (x = 0; x < max_x; x++)
     {
+        int ny;
+        int ly;
         y = roundf(1.0f * (HEIGHT - 1) * iter_map[x] / max_p);
-        SDL_RenderDrawLine(main_window, x, 0, x, y);
+        for (ly = 0; ly < y; ly++)
+        {
+            ny = pitch * ly;
+            pixels[ny + x * 4] = 255;
+            pixels[ny + x * 4 + 1] = 255;
+            pixels[ny + x * 4 + 2] = 255;
+            pixels[ny + x * 4 + 3] = 255;
+        }
     }
+    SDL_UnlockTexture(texture);
+    SDL_RenderCopy(main_window, texture, NULL, &window_rec);
     free(iter_map);
 }
 
@@ -813,7 +833,7 @@ void gui_loop()
             render_time = tp2 - tp1;
             render_times += render_time;
             flips++;
-            //		    printf("render time=%lu\n", render_time);
+            // printf("render time=%lu\n", render_time);
         }
         if (!animate) draw = 0;
         if (key)
