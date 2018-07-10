@@ -113,16 +113,30 @@ void clear_counters()
     flips = 0;
 }
 
+void init_parameters()
+{
+    ofs_lx = OFS_LX;
+    ofs_rx = OFS_RX;
+    ofs_ty = 1.5f;
+    ofs_by = -1.5f;
+    zoom = 1.0f;
+    dx = 0;
+    dy = 0;
+    zx = 1.0f;
+    zy = 1.0f;
+    szx = 1.0f;
+    szy = 1.0f;
+    er = 4.0f;
+    max_iter = 360;
+}
+
 void set_fractal(enum fractals f, int d)
 {
     if (!quiet) printf("select fractal: %d\n", f);
     fractal = f;
     gws_x = WIDTH / d;
     gws_y = HEIGHT / d;
-    max_iter = 360;
-    er = 4.0f;
-    ofs_lx = -1.5f;
-    ofs_ty = 1.5f;
+    init_parameters();
     clear_counters();
 }
 
@@ -413,19 +427,6 @@ int move_fractal(int kl, int mod_kl)
             c_y -= 0.001;
         else
             c_y += 0.001;
-        break;
-    case 'r':
-        ofs_lx = OFS_LX;
-        ofs_rx = OFS_RX;
-        ofs_ty = 1.5f;
-        ofs_by = -1.5f;
-        zoom = 1.0f;
-        dx = 0;
-        dy = 0;
-        zx = 1.0f;
-        zy = 1.0f;
-        szx = 1.0f;
-        szy = 1.0f;
         break;
     }
     return key;

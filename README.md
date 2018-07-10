@@ -34,7 +34,6 @@ Discover and explore fractals world with OpenCL acceleration.
 # Keyboard usage
 
 * ESC - exit application
-* r - set default parameters
 * i/I - increase/decrease number of calculation's iteriations
 * c/C/+/=/-/\_/m/M/h/H/j/J/k/K/l/L - change colors
 * P - show color palettes

@@ -879,7 +879,6 @@ void gui_loop()
                 case '/':
                 case 'x':
                 case 'y':
-                case 'r':
                     key = move_fractal(kl, event.key.keysym.mod);
                     break;
                 case '1':
