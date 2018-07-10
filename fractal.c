@@ -736,7 +736,7 @@ void gui_loop()
                 stop_animation = 1;
             }
         }
-        if (fractal == DRAGON) draw_frames = 1;
+        if (fractal == DRAGON || fractal == JULIA_FULL) draw_frames = 1;
         if (palette)
         {
             draw = 0;
