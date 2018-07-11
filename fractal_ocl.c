@@ -111,6 +111,7 @@ void prepare_kernel_args64(struct kernel_args64* args)
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;
+    args->mod1 = mod1;
     args->pal = pal;
     args->c_x = c_x;
     args->c_y = c_y;
@@ -162,6 +163,7 @@ void prepare_kernel_args32(struct kernel_args32* args)
     args->mm = mm;
     args->er = er;
     args->max_iter = max_iter;
+    args->mod1 = mod1;
     args->pal = pal;
     args->c_x = c_x;
     args->c_y = c_y;

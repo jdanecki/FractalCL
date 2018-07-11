@@ -46,6 +46,8 @@ extern int cur_dev; // 0 - CPU, 1,..nr_devices - OCL devices
 extern unsigned long long iter_limit;
 extern unsigned long render_time;
 extern unsigned long render_times;
+extern unsigned long prepare_time;
+extern unsigned long prepare_times;
 extern unsigned long flips;
 extern unsigned long frames_time;
 extern unsigned long cpu_execution;
@@ -56,6 +58,7 @@ extern float c1[3];
 extern float c2[3];
 extern float c3[3];
 extern float c4[3];
+extern int mod1;
 
 int calculate_offsets();
 void select_fractal(int f);

@@ -308,6 +308,7 @@ void prepare_cpu_args()
     cpu_kernel_args.mm = mm;
     cpu_kernel_args.er = er;
     cpu_kernel_args.max_iter = max_iter;
+    cpu_kernel_args.mod1 = mod1;
     cpu_kernel_args.pal = pal;
     cpu_kernel_args.c_x = c_x;
     cpu_kernel_args.c_y = c_y;
@@ -455,12 +456,12 @@ void draw_right_panel(int column)
 {
     int row = 0;
     unsigned long exec_time;
-    unsigned long avg, r_avg;
+    unsigned long avg, r_avg1, r_avg2;
 
     draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
 
     draw_string(row++, "===", " Main ====");
-    draw_int(row++, "F1-F8 fractal", fractal);
+    draw_int(row++, "F1-F8 fractal (F9:mod1)", fractal);
 #ifdef OPENCL_SUPPORT
     draw_int(row++, "v device", cur_dev);
 #endif
@@ -505,13 +506,17 @@ void draw_right_panel(int column)
     draw_double(row++, "w/s dy", dy);
 
     draw_string(row++, "SPACE", " Benchmarking [us]");
-    draw_long(row++, "time", frames_time / draw_frames);
+    draw_long(row++, "frame", frames_time / draw_frames);
     avg = calculate_avg_time(&exec_time);
 
     draw_2long(row++, "exec", exec_time, "avg", avg);
     last_avg_result = avg;
-    r_avg = flips ? render_times / flips : 0;
-    draw_2long(row++, "render", render_time, "avg", r_avg);
+
+    r_avg1 = flips ? prepare_times / flips : 0;
+    draw_2long(row++, "prepare", prepare_time, "avg", r_avg1);
+
+    r_avg2 = flips ? render_times / flips : 0;
+    draw_2long(row++, "render", render_time, "avg", r_avg2);
 
     if (performance_test)
     {
@@ -522,18 +527,18 @@ void draw_right_panel(int column)
         dst.x = column;
         dst.y = 0;
 
-        if (r_avg)
+        if (r_avg1 + r_avg2)
         {
-            res = (HEIGHT_FL - 40) * (frames_time / draw_frames) / r_avg;
+            res = (HEIGHT_FL - 40) * (frames_time / draw_frames) / (r_avg1 + r_avg2);
         }
         dst.h = res;
 
         SDL_SetRenderDrawColor(main_window, 255, 128, 128, 255);
         SDL_RenderFillRect(main_window, &dst);
 
-        if (r_avg)
+        if (r_avg1 + r_avg2)
         {
-            res = (HEIGHT_FL - 40) * avg / r_avg;
+            res = (HEIGHT_FL - 40) * avg / (r_avg1 + r_avg2);
         }
         dst.h = res;
         if (dst.x + 5 < WIDTH) dst.x += 5;
@@ -721,51 +726,315 @@ void show_perf_result()
     puts("***********************************************************");
 }
 
-void gui_loop()
+int draw = 1;
+int flip_window;
+int stop_animation = 1;
+int animate;
+int column;
+double m1x, m1y;
+int key;
+
+void draw_palettes()
 {
-    SDL_Event event;
-    int button;
-    int animate = 0;
-    int key = 0;
-    int stop_animation = 1;
-    int flip_window = 0;
-    double m1x, m1y;
-    int draw = 1;
-    int column = 0;
+    draw = 0;
+    flip_window = 0;
+    stop_animation = 0;
+    performance_test = 0;
+    draw_right_panel(column);
+    show_palette();
+}
 
+void outside()
+{
+    dx = 0;
+    dy = 0;
+    draw = 0;
+    animate = 0;
+    draw_frames = 16;
+    stop_animation = 1;
+}
+
+void draw_fractals()
+{
+    float m2x, m2y;
+    unsigned long tp1, tp2, tp3;
     SDL_Rect window_rec;
-
-    init_window();
 
     window_rec.w = WIDTH;
     window_rec.h = HEIGHT;
     window_rec.x = 0;
     window_rec.y = 0;
 
+    flip_window = 0;
+
+    tp1 = get_time_usec();
+    prepare_frames();
+    tp2 = get_time_usec();
+
+#ifdef OPENCL_SUPPORT
+    if (cur_dev)
+    {
+        update_gpu_texture();
+    }
+    else
+#endif
+    {
+        void* pixels;
+        int pitch;
+        SDL_LockTexture(texture, NULL, &pixels, &pitch);
+        memcpy(pixels, cpu_pixels, pitch * HEIGHT);
+        SDL_UnlockTexture(texture);
+    }
+    SDL_RenderCopy(main_window, texture, NULL, &window_rec);
+
+    m2x = equation(m1x, 0.0f, lx, WIDTH_FL, rx);
+    m2y = equation(m1y, 0.0f, ty, HEIGHT_FL, by);
+
+    draw_right_panel(column);
+    if (performance_test)
+    {
+        column++;
+        column %= WIDTH;
+    }
+
+    prepare_cpu_args();
+    sprintf(status_line, "[%2.20f,%2.20f] %s: %s iter=%d mod1=%d", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal],
+            calculate_one_pixel(m1x / 4, m1y / 4), mod1);
+    write_text(status_line, 0, HEIGHT - FONT_SIZE);
+#ifdef OPENCL_SUPPORT
+    if (cur_dev)
+    {
+        sprintf(status_line, "OCL[%d/%d]: %s %s ", current_device + 1, nr_devices, ocl_devices[current_device].name,
+                ocl_devices[current_device].fp64 ? "fp64" : "fp32");
+        write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
+    }
+#endif
+    if (show_iterations)
+    {
+        show_iterations_window();
+    }
+
+    SDL_RenderPresent(main_window);
+    tp3 = get_time_usec();
+
+    prepare_time = tp2 - tp1;
+    prepare_times += prepare_time;
+
+    render_time = tp3 - tp2;
+    render_times += render_time;
+    flips++;
+    // printf("prepare time=%lu\n", tp2 - tp1);
+    // printf("render time=%lu\n", tp3 - tp2);
+}
+
+int keyboard_event(SDL_Event* event)
+{
+    int kl = event->key.keysym.sym;
+    //                printf("mod=%d\n", event->key.keysym.mod);
+    switch (kl)
+    {
+    case SDLK_ESCAPE:
+        return 1;
+    case SDLK_F1:
+    case SDLK_F2:
+    case SDLK_F3:
+    case SDLK_F4:
+    case SDLK_F5:
+    case SDLK_F6:
+    case SDLK_F7:
+    case SDLK_F8:
+        select_fractals(kl);
+        break;
+    case SDLK_F9:
+        mod1 ^= 1;
+        break;
+    case 'i':
+    case 'e':
+        //              case '2':
+        //              case '3':
+        change_fractal_params(kl, event->key.keysym.mod);
+        break;
+    case 'c':
+    case '=':
+    case '-':
+    case 'm':
+    case 'p':
+    case 'h':
+    case 'j':
+    case 'k':
+    case 'l':
+        change_fractal_colors(kl, event->key.keysym.mod);
+        break;
+    case SDLK_LEFT:
+    case SDLK_RIGHT:
+    case SDLK_DOWN:
+    case SDLK_UP:
+    case 'a':
+    case 'd':
+    case 's':
+    case 'w':
+    case '8':
+    case '/':
+    case 'x':
+    case 'y':
+        key = move_fractal(kl, event->key.keysym.mod);
+        break;
+    case '1':
+        show_iterations ^= 1;
+        break;
+#ifdef OPENCL_SUPPORT
+    case 'v':
+
+        cur_dev++;
+        if (cur_dev > nr_devices)
+        {
+            cur_dev = 0; // switch to CPU
+            iter_limit = 43000000000000LL;
+        }
+        if (cur_dev)
+        { // for OCL devices
+            current_device = cur_dev - 1;
+            iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
+        }
+        clear_counters();
+        break;
+#endif
+    case SDLK_SPACE:
+        performance_test ^= 1;
+        if (performance_test)
+        {
+            clear_counters();
+            column = 0;
+        }
+        else
+        {
+            show_perf_result();
+        }
+        break;
+    }
+    draw = 1;
+    draw_frames = 16;
+
+    return 0;
+}
+
+void mouse_event(SDL_Event* event)
+{
+    static int button = 0;
+
+    if (event->type == SDL_MOUSEMOTION)
+    {
+        if (event->button.x > WIDTH) return;
+        m1x = event->button.x;
+        m1y = event->button.y;
+        if (!performance_test)
+        {
+            flip_window = 1;
+            draw_frames = 1;
+        }
+    }
+
+    if (event->type == SDL_MOUSEBUTTONDOWN)
+    {
+        if (event->button.x > WIDTH) return;
+        if (event->button.button == 2)
+        {
+            zx = 1.0;
+            zy = 1.0;
+
+            draw = 0;
+            animate = 0;
+            draw_frames = 16;
+            stop_animation = 1;
+            return;
+        }
+
+        mx = equation(event->button.x, 0, ofs_lx, WIDTH, ofs_rx);
+        my = equation(event->button.y % (HEIGHT), 0, ofs_ty, HEIGHT, ofs_by);
+
+        if (event->button.button == 3)
+        {
+            if (button != event->button.button)
+            {
+                zx = 1.0;
+                zy = 1.0;
+                stop_animation = 1;
+                draw_frames = 16;
+            }
+            else
+            {
+                zx += 0.001;
+                zy += 0.001;
+            }
+            animate = 1;
+            draw_frames = 1;
+        }
+
+        if (event->button.button == 1)
+        {
+            if (button != event->button.button)
+            {
+                zx = 1.0;
+                zy = 1.0;
+                stop_animation = 1;
+                draw_frames = 16;
+            }
+            else
+            {
+                zx -= 0.001;
+                zy -= 0.001;
+            }
+            animate = 1;
+            draw_frames = 1;
+        }
+        button = event->button.button;
+
+        draw = 1;
+    }
+    if (event->type == SDL_MOUSEBUTTONUP)
+    {
+        //   animate = 0;
+    }
+}
+
+int handle_events()
+{
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event))
+    {
+        //			printf("event = %d\n", event.type);
+        if (event.type == SDL_WINDOWEVENT)
+        {
+            draw = 1;
+            draw_frames = 16;
+        }
+
+        if (event.type == SDL_QUIT) return 1;
+        if (event.type == SDL_KEYDOWN)
+        {
+            if (keyboard_event(&event)) return 1;
+        }
+        if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN) mouse_event(&event);
+    }
+    return 0;
+}
+
+void gui_loop()
+{
+    /*    unsigned long tp1=0, tp2=0;
+        unsigned long tms;*/
+    init_window();
+
     while (1)
     {
+
+        if (palette) draw_palettes();
         if (animate || key)
         {
-            if (calculate_offsets())
-            {
-                dx = 0;
-                dy = 0;
-                draw = 0;
-                animate = 0;
-                draw_frames = 16;
-                stop_animation = 1;
-            }
+            if (calculate_offsets()) outside();
         }
         if (fractal == DRAGON || fractal == JULIA_FULL) draw_frames = 1;
-        if (palette)
-        {
-            draw = 0;
-            flip_window = 0;
-            stop_animation = 0;
-            performance_test = 0;
-            draw_right_panel(column);
-            show_palette();
-        }
         if (draw || stop_animation)
         {
             stop_animation = 0;
@@ -778,62 +1047,11 @@ void gui_loop()
 
         if (flip_window || performance_test || show_iterations)
         {
-            float m2x, m2y;
-            unsigned long tp1, tp2;
-
-            flip_window = 0;
-            tp1 = get_time_usec();
-
-            prepare_frames();
-#ifdef OPENCL_SUPPORT
-            if (cur_dev)
-            {
-                update_gpu_texture();
-            }
-            else
-#endif
-            {
-                void* pixels;
-                int pitch;
-                SDL_LockTexture(texture, NULL, &pixels, &pitch);
-                memcpy(pixels, cpu_pixels, pitch * HEIGHT);
-                SDL_UnlockTexture(texture);
-            }
-            SDL_RenderCopy(main_window, texture, NULL, &window_rec);
-
-            m2x = equation(m1x, 0.0f, lx, WIDTH_FL, rx);
-            m2y = equation(m1y, 0.0f, ty, HEIGHT_FL, by);
-
-            draw_right_panel(column);
-            if (performance_test)
-            {
-                column++;
-                column %= WIDTH;
-            }
-
-            prepare_cpu_args();
-            sprintf(status_line, "[%2.20f,%2.20f] %s: %s iter=%d", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal],
-                    calculate_one_pixel(m1x / 4, m1y / 4));
-            write_text(status_line, 0, HEIGHT - FONT_SIZE);
-#ifdef OPENCL_SUPPORT
-            if (cur_dev)
-            {
-                sprintf(status_line, "OCL[%d/%d]: %s %s ", current_device + 1, nr_devices, ocl_devices[current_device].name,
-                        ocl_devices[current_device].fp64 ? "fp64" : "fp32");
-                write_text(status_line, 0, HEIGHT - 2 * FONT_SIZE);
-            }
-#endif
-            if (show_iterations)
-            {
-                show_iterations_window();
-            }
-
-            SDL_RenderPresent(main_window);
-            tp2 = get_time_usec();
-            render_time = tp2 - tp1;
-            render_times += render_time;
-            flips++;
-            // printf("render time=%lu\n", render_time);
+            //            tp1 = get_time_usec();
+            draw_fractals();
+            /*          tp2 = get_time_usec();
+                      tms = (tp2 - tp1);
+                      printf("time = %lu fps=%lu\n", tms, tms ? 1000000/tms : 0);*/
         }
         if (!animate) draw = 0;
         if (key)
@@ -842,176 +1060,7 @@ void gui_loop()
             key = 0;
         }
 
-        while (SDL_PollEvent(&event))
-        {
-            //			printf("event = %d\n", event.type);
-            if (event.type == SDL_WINDOWEVENT)
-            {
-                draw = 1;
-                draw_frames = 16;
-            }
-
-            if (event.type == SDL_QUIT) return;
-            if (event.type == SDL_KEYDOWN)
-            {
-                int kl = event.key.keysym.sym;
-                //                printf("mod=%d\n", event.key.keysym.mod);
-                switch (kl)
-                {
-                case SDLK_F1:
-                case SDLK_F2:
-                case SDLK_F3:
-                case SDLK_F4:
-                case SDLK_F5:
-                case SDLK_F6:
-                case SDLK_F7:
-                case SDLK_F8:
-                    select_fractals(kl);
-                    break;
-                case 27:
-                    return;
-                case 'i':
-                case 'e':
-                    //              case '2':
-                    //              case '3':
-                    change_fractal_params(kl, event.key.keysym.mod);
-                    break;
-                case 'c':
-                case '=':
-                case '-':
-                case 'm':
-                case 'p':
-                case 'h':
-                case 'j':
-                case 'k':
-                case 'l':
-                    change_fractal_colors(kl, event.key.keysym.mod);
-                    break;
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
-                case SDLK_DOWN:
-                case SDLK_UP:
-                case 'a':
-                case 'd':
-                case 's':
-                case 'w':
-                case '8':
-                case '/':
-                case 'x':
-                case 'y':
-                    key = move_fractal(kl, event.key.keysym.mod);
-                    break;
-                case '1':
-                    show_iterations ^= 1;
-                    break;
-#ifdef OPENCL_SUPPORT
-                case 'v':
-
-                    cur_dev++;
-                    if (cur_dev > nr_devices)
-                    {
-                        cur_dev = 0; // switch to CPU
-                        iter_limit = 43000000000000LL;
-                    }
-                    if (cur_dev)
-                    { // for OCL devices
-                        current_device = cur_dev - 1;
-                        iter_limit = ocl_devices[current_device].fp64 ? 43000000000000LL : 300000;
-                    }
-                    clear_counters();
-                    break;
-#endif
-                case SDLK_SPACE:
-                    performance_test ^= 1;
-                    if (performance_test)
-                    {
-                        clear_counters();
-                        column = 0;
-                    }
-                    else
-                    {
-                        show_perf_result();
-                    }
-                    break;
-                }
-                draw = 1;
-                draw_frames = 16;
-            }
-
-            if (event.type == SDL_MOUSEMOTION)
-            {
-                if (event.button.x > WIDTH) continue;
-                m1x = event.button.x;
-                m1y = event.button.y;
-                if (!performance_test)
-                {
-                    flip_window = 1;
-                    draw_frames = 1;
-                }
-            }
-
-            if (event.type == SDL_MOUSEBUTTONDOWN)
-            {
-                if (event.button.x > WIDTH) continue;
-                if (event.button.button == 2)
-                {
-                    zx = 1.0;
-                    zy = 1.0;
-
-                    draw = 0;
-                    animate = 0;
-                    draw_frames = 16;
-                    stop_animation = 1;
-                    continue;
-                }
-
-                mx = equation(event.button.x, 0, ofs_lx, WIDTH, ofs_rx);
-                my = equation(event.button.y % (HEIGHT), 0, ofs_ty, HEIGHT, ofs_by);
-
-                if (event.button.button == 3)
-                {
-                    if (button != event.button.button)
-                    {
-                        zx = 1.0;
-                        zy = 1.0;
-                        stop_animation = 1;
-                        draw_frames = 16;
-                    }
-                    else
-                    {
-                        zx += 0.001;
-                        zy += 0.001;
-                    }
-                    animate = 1;
-                    draw_frames = 1;
-                }
-
-                if (event.button.button == 1)
-                {
-                    if (button != event.button.button)
-                    {
-                        zx = 1.0;
-                        zy = 1.0;
-                        stop_animation = 1;
-                        draw_frames = 16;
-                    }
-                    else
-                    {
-                        zx -= 0.001;
-                        zy -= 0.001;
-                    }
-                    animate = 1;
-                    draw_frames = 1;
-                }
-                button = event.button.button;
-
-                draw = 1;
-            }
-            if (event.type == SDL_MOUSEBUTTONUP)
-            {
-                //   animate = 0;
-            }
-        }
+        if (handle_events()) break;
     }
 }
 

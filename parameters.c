@@ -52,7 +52,7 @@ float c1[3] = {0.5f, 0.5f, 0.5f};
 float c2[3] = {0.5f, 0.5f, 0.5f};
 float c3[3] = {1.0f, 1.0f, 1.0f};
 float c4[3] = {0.0f, 0.33f, 0.66f};
-
+int mod1;
 unsigned int max_iter = 360;
 int pal;     // 0=hsv 1,...=rgb
 int palette; // 1 - show palette
@@ -66,6 +66,8 @@ unsigned long long iter_limit = 43000000000000LL;
 
 unsigned long render_time;
 unsigned long render_times;
+unsigned long prepare_time;
+unsigned long prepare_times;
 unsigned long flips;
 unsigned long frames_time;
 unsigned long cpu_execution;
@@ -110,6 +112,7 @@ void clear_counters()
     gpu_iter = 0;
     gpu_executions = 0;
     render_times = 0;
+    prepare_times = 0;
     flips = 0;
 }
 
@@ -128,6 +131,7 @@ void init_parameters()
     szy = 1.0f;
     er = 4.0f;
     max_iter = 360;
+    mod1 = 0;
 }
 
 void set_fractal(enum fractals f, int d)
