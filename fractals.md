@@ -67,5 +67,5 @@ y1 = 0.4 * xc + 0.76 * yc;
 
 * plasma
 
-![plasma[plasma.png]
+![plasma](plasma.png)
 
