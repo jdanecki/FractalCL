@@ -30,20 +30,24 @@ ifeq ($(SDL_ACCELERATED), 1)
 CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
-all: ocl sdl complex sdl_render fractal
+all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma
 
-ocl: ../ocl.c test_ocl.c Makefile
-	gcc -o test_$@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
+test_ocl: ../ocl.c test_ocl.c Makefile
+	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
 
-sdl: ../gui.c test_sdl.c Makefile
-	gcc -o test_$@ test_sdl.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_sdl: ../gui.c test_sdl.c Makefile
+	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
-sdl_render: ../gui.c test_sdl_render.c Makefile
-	gcc -o test_$@ test_sdl_render.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_plasma: ../gui.c test_plasma.c Makefile
+	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
-fractal: ../gui.c test_fractal.c Makefile
-	gcc -o test_$@ test_fractal.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_sdl_render: ../gui.c test_sdl_render.c Makefile
+	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
-complex: test_complex.c Makefile
-	gcc -o test_$@ test_complex.c $(CFLAGS)
+test_fractal: ../gui.c test_fractal.c Makefile
+	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+
+test_complex: test_complex.c Makefile
+	gcc -o $@ $@.c $(CFLAGS)
+
 

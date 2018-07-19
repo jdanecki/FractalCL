@@ -65,4 +65,7 @@ y1 = 0.4 * xc + 0.76 * yc;
 ```
 ![dragon](dragon.png)
 
+* plasma
+
+![plasma[plasma.png]
 
