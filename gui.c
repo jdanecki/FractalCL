@@ -16,7 +16,9 @@
 */
 
 #include "gui.h"
+#ifdef OPENCL_SUPPORT
 #include "fractal_ocl.h"
+#endif
 
 const char* font_file = "FreeMono.ttf";
 TTF_Font* font;

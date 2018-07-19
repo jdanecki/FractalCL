@@ -20,6 +20,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "common.h"
 #include "window.h"
 
 extern SDL_Renderer* main_window;

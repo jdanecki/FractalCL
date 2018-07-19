@@ -15,34 +15,5 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _FRACTAL_H_
-#define _FRACTAL_H_
-
-#include "fractal_complex.h"
-#include <errno.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <sched.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-enum fractals
-{
-    JULIA,
-    MANDELBROT,
-    JULIA_FULL,
-    DRAGON,
-    JULIA3,
-    BURNING_SHIP,
-    GENERALIZED_CELTIC,
-    TRICORN,
-    NR_FRACTALS
-};
-
-#include "common.h"
-
-#endif
+#define STRING(VALUE) #VALUE
+#define STRING_MACRO(MACRO) STRING(MACRO)
