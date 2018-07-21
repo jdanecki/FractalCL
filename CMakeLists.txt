@@ -34,11 +34,11 @@ if(FP_64_SUPPORT)
 endif()
 
 if(SDL_ACCELERATED)
-	add_definitions("-DSDL_ACCELERATED=1")
+    add_definitions("-DSDL_ACCELERATED=1")
 endif()
 
 if(OPENCL_SUPPORT)
-	add_definitions("-DOPENCL_SUPPORT=1")
+    add_definitions("-DOPENCL_SUPPORT=1")
     find_package(OpenCL REQUIRED)
     set(OPTIONAL_LIBRARIES ${OpenCL_LIBRARY})
     set(OPTIONAL_SOURCES
@@ -51,12 +51,14 @@ endif()
 add_executable(FractalCL
     fractal.c
     gui.c
-	parameters.c
+    parameters.c
+    palette.c
     include/fractal_complex.h
     include/fractal.h
     include/gui.h
     include/window.h
-	include/parameters.h
+    include/parameters.h
+    include/palette.h
     ${OPTIONAL_SOURCES}
 )
 
@@ -67,18 +69,18 @@ target_link_libraries(FractalCL
 )
 
 install(PROGRAMS
-	${FractalCL_BINARY_DIR}/FractalCL
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    ${FractalCL_BINARY_DIR}/FractalCL
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
 
 install(DIRECTORY
-	kernels
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
+    kernels
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
 )
 
 install(FILES
-	FreeMono.ttf
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
+    FreeMono.ttf
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/FractalCL
 )
 message(STATUS "Installation dir: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Data dir: ${CMAKE_INSTALL_PREFIX}/share/FractalCL")
