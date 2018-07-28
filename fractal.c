@@ -52,6 +52,7 @@ int performance_test;
 int show_iterations;
 unsigned long last_avg_result;
 int console_mode;
+int postprocess;
 
 char* fractals_names[NR_FRACTALS] = {"julia z^2", "mandelbrot", "julia full", "dragon", "julia z^3", "burning ship", "generalized celtic", "tricorn"};
 
@@ -399,7 +400,6 @@ void prepare_frames()
     unsigned long tp1, tp2;
     int pixel;
     frames_time = 0;
-
     for (pixel = 0; pixel < draw_frames; pixel++)
     {
         tp1 = get_time_usec();
@@ -490,7 +490,7 @@ void draw_fractals()
 #ifdef OPENCL_SUPPORT
     if (cur_dev)
     {
-        update_gpu_texture();
+        update_gpu_texture(postprocess);
     }
     else
 #endif
@@ -499,6 +499,8 @@ void draw_fractals()
         int pitch;
         SDL_LockTexture(texture, NULL, &pixels, &pitch);
         memcpy(pixels, cpu_pixels, pitch * HEIGHT);
+        if (pitch * HEIGHT != IMAGE_SIZE) printf("cpu size=%d -> %d\n", pitch * HEIGHT, IMAGE_SIZE);
+        if (postprocess) make_postprocess(pixels);
         SDL_UnlockTexture(texture);
     }
     SDL_RenderCopy(main_window, texture, NULL, &window_rec);
@@ -597,6 +599,9 @@ int keyboard_event(SDL_Event* event)
         break;
     case '1':
         show_iterations ^= 1;
+        break;
+    case '2':
+        postprocess ^= 1;
         break;
 #ifdef OPENCL_SUPPORT
     case 'v':

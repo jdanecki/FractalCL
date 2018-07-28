@@ -17,6 +17,7 @@
 
 #include "fractal_ocl.h"
 #include "gui.h"
+#include "palette.h"
 #include "parameters.h"
 
 int finish_thread;
@@ -116,6 +117,7 @@ void prepare_kernel_args64(struct kernel_args64* args)
     args->c_x = c_x;
     args->c_y = c_y;
     args->ofs_x++;
+    // printf("x=%d\n", args->ofs_x);
     if (args->ofs_x == 4)
     {
         args->ofs_y++;
@@ -243,10 +245,10 @@ void* ocl_kernel(void* d)
 
     while (!finish_thread && !err)
     {
-        //        printf("%s: waiting for work\n", dev->name);
         pthread_mutex_lock(&t->lock);
         while (!t->work)
         {
+            //            printf("%s: waiting for work\n", dev->name);
             if (finish_thread)
             {
                 if (!quiet) printf("%s: thread exits\n", dev->name);
@@ -257,8 +259,8 @@ void* ocl_kernel(void* d)
         t->work = 0;
         pthread_mutex_unlock(&t->lock);
 
-        //        printf("ocl kernel for %s tid=%lx\n", dev->name,
-        //        dev->thread.tid);
+        //      printf("ocl kernel for %s tid=%lx\n", dev->name,
+        //            dev->thread.tid);
 
         err = execute_fractal(dev, fractal);
 
@@ -308,16 +310,20 @@ void start_ocl()
 
     pthread_mutex_lock(&lock_fin);
     //    printf("waiting for finished tasks\n");
+
+    //    unsigned long tp1, tp2;
+    //    tp1 = get_time_usec();
     while (!tasks_finished)
     {
         pthread_cond_wait(&cond_fin, &lock_fin);
     }
-    //    printf("tasks finished\n");
+    //    tp2 = get_time_usec();
+    //    printf("tasks finished %ld\n", tp2-tp1);
     tasks_finished = 0;
     pthread_mutex_unlock(&lock_fin);
 }
 
-void update_gpu_texture()
+void update_gpu_texture(int postprocess)
 {
     int err;
     if (ocl_devices[current_device].initialized)
@@ -333,9 +339,26 @@ void update_gpu_texture()
         else
         {
             void* pixels;
-            int pitch;
+            int pitch, i;
             SDL_LockTexture(texture, NULL, &pixels, &pitch);
-            memcpy(pixels, px1, pitch * HEIGHT);
+            if (postprocess)
+            {
+                unsigned int* src = px1;
+                unsigned int* dst = pixels;
+                int s = IMAGE_SIZE / 4;
+                // make_postprocess(pixels);
+                for (i = 0; i < s; i++)
+                {
+                    unsigned int c = src[i] * mm;
+                    dst[i] = colors[c % 360 + 360 * (c < max_iter)];
+                }
+            }
+            else
+            {
+                memcpy(pixels, px1, pitch * HEIGHT);
+                if (pitch * HEIGHT != IMAGE_SIZE) printf("gpu size=%d -> %d\n", pitch * HEIGHT, IMAGE_SIZE);
+            }
+
             SDL_UnlockTexture(texture);
 
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);

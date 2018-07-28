@@ -31,6 +31,7 @@ __kernel void julia(__global uint* pixels, __global unsigned int* colors, struct
         z_y = j_y;
         i++;
     }
+    //    pixels[y * WIDTH + x] = i;
     pixels[y * WIDTH + x] = set_color(args, i, colors);
 #ifdef HOST_APP
     return i;

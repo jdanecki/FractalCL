@@ -308,3 +308,14 @@ void show_palette()
     }
     SDL_RenderPresent(main_window);
 }
+
+void make_postprocess(void* pixels)
+{
+    int i;
+    unsigned char* p = (unsigned char*)pixels;
+    for (i = 0; i < IMAGE_SIZE; i++)
+    {
+        p[i] += 1;
+        if (!i) printf("%d\n", p[i]);
+    }
+}
