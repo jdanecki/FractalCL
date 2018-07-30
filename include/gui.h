@@ -25,6 +25,7 @@
 
 extern SDL_Renderer* main_window;
 extern SDL_Texture* texture;
+extern void* texture_pixels;
 
 int init_window();
 void write_text(const char* t, int x, int y);

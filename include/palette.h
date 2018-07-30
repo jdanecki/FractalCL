@@ -19,4 +19,4 @@ extern unsigned int* colors;
 
 void show_palette();
 int initialize_colors();
-void make_postprocess(void* pixels);
+void make_postprocess(void* px1);

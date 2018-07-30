@@ -6,6 +6,7 @@ unsigned int set_color(struct KERNEL_ARGS args, unsigned int i, __global unsigne
 {
     unsigned int color, r, g, b, c;
     float cf;
+    if (args.post_process) return i;
     switch (args.pal)
     {
     case 1:

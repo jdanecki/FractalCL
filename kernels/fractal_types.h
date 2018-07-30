@@ -36,6 +36,7 @@ struct kernel_args64
     int ofs_x, ofs_y;
     float c1[3], c2[3], c3[3], c4[3];
     int mod1;
+    int post_process;
 };
 #endif
 struct kernel_args32
@@ -55,6 +56,7 @@ struct kernel_args32
     int ofs_x, ofs_y;
     float c1[3], c2[3], c3[3], c4[3];
     int mod1;
+    int post_process;
 };
 
 #ifdef FP_64_SUPPORT

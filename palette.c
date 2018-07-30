@@ -150,7 +150,7 @@ void hsv2rgb(int h, int s, int v, int* r, int* g, int* b)
 
 int initialize_colors()
 {
-    int err, v, iter;
+    int err, iter;
 #ifdef OPENCL_SUPPORT
     int d;
 #endif
@@ -160,65 +160,65 @@ int initialize_colors()
     err = posix_memalign((void**)&colors, 4096, 4096);
     if (err) return 1;
 
-    for (v = 0; v < 2; v++)
+    for (iter = 0; iter < 360; iter++)
     {
-        for (iter = 0; iter < 360; iter++)
-        {
-            float h1 = iter / 60.0;
-            float v1 = v ? 1.0 : 0.5; // 1.0 * v;
-            int r, g, b;
-            float r1, g1, b1, i, f, p, q, t;
+        float h1 = iter / 60.0;
+        float v1 = 1.0;
+        int r, g, b;
+        float r1, g1, b1, i, f, p, q, t;
 
-            i = floor(h1);
-            f = h1 - i;
-            p = 0;
-            q = v1 * (1.0 - f);
-            t = v1 * (1.0 - (1.0 - f));
-            switch ((int)i)
-            {
-            case 0:
-                r1 = v1;
-                g1 = t;
-                b1 = p;
-                break;
-            case 1:
-                r1 = q;
-                g1 = v1;
-                b1 = p;
-                break;
-            case 2:
-                r1 = p;
-                g1 = v1;
-                b1 = t;
-                break;
-            case 3:
-                r1 = p;
-                g1 = q;
-                b1 = v1;
-                break;
-            case 4:
-                r1 = t;
-                g1 = p;
-                b1 = v1;
-                break;
-            case 5:
-                r1 = v1;
-                g1 = p;
-                b1 = q;
-                break;
-            }
-            //			printf("v=%d i=%d r=%f g=%f b=%f\n", v, iter, r1, g1, b1);
-            r = roundf(255.0 * r1);
-            r &= 0xff;
-            g = roundf(255.0 * g1);
-            g &= 0xff;
-            b = roundf(255.0 * b1);
-            b &= 0xff;
-            colors[iter + v * 360] = 0xff000000 | r << 16 | g << 8 | b;
+        i = floor(h1);
+        f = h1 - i;
+        p = 0;
+        q = v1 * (1.0 - f);
+        t = v1 * (1.0 - (1.0 - f));
+        switch ((int)i)
+        {
+        case 0:
+            r1 = v1;
+            g1 = t;
+            b1 = p;
+            break;
+        case 1:
+            r1 = q;
+            g1 = v1;
+            b1 = p;
+            break;
+        case 2:
+            r1 = p;
+            g1 = v1;
+            b1 = t;
+            break;
+        case 3:
+            r1 = p;
+            g1 = q;
+            b1 = v1;
+            break;
+        case 4:
+            r1 = t;
+            g1 = p;
+            b1 = v1;
+            break;
+        case 5:
+            r1 = v1;
+            g1 = p;
+            b1 = q;
+            break;
         }
+        //			printf("v=%d i=%d r=%f g=%f b=%f\n", v, iter, r1, g1, b1);
+        r = roundf(255.0 * r1);
+        r &= 0xff;
+        g = roundf(255.0 * g1);
+        g &= 0xff;
+        b = roundf(255.0 * b1);
+        b &= 0xff;
+
+        unsigned int c = 0xff000000 | r << 16 | g << 8 | b;
+        colors[iter] = c;
+        colors[359 * 2 - iter] = c;
     }
     colors[0] = 0;
-    colors[360] = 0;
+    colors[360] = (colors[359] + colors[361]) / 2;
 #ifdef OPENCL_SUPPORT
     for (d = 0; d < nr_devices; d++)
     {
@@ -230,7 +230,7 @@ int initialize_colors()
     return 0;
 }
 
-unsigned int get_color(int c) { return colors[c % 720]; }
+unsigned int get_color(int c) { return colors[c % 360]; }
 
 void show_palette()
 {
@@ -309,13 +309,19 @@ void show_palette()
     SDL_RenderPresent(main_window);
 }
 
-void make_postprocess(void* pixels)
+void make_postprocess(void* px1)
 {
     int i;
-    unsigned char* p = (unsigned char*)pixels;
-    for (i = 0; i < IMAGE_SIZE; i++)
+
+    unsigned int* src = px1;
+    unsigned int* dst = texture_pixels;
+
+    int s = IMAGE_SIZE / 4;
+    for (i = 0; i < s; i++)
     {
-        p[i] += 1;
-        if (!i) printf("%d\n", p[i]);
+        unsigned char r = 255.0 * src[i] / max_iter;
+        unsigned char g = 128 + 127 * sin(src[i]);
+        unsigned char b = 128 + 127 * cos(src[i]);
+        dst[i] = 0xff000000 | r << 16 | g << 8 | b;
     }
 }

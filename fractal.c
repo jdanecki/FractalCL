@@ -52,7 +52,6 @@ int performance_test;
 int show_iterations;
 unsigned long last_avg_result;
 int console_mode;
-int postprocess;
 
 char* fractals_names[NR_FRACTALS] = {"julia z^2", "mandelbrot", "julia full", "dragon", "julia z^3", "burning ship", "generalized celtic", "tricorn"};
 
@@ -106,6 +105,7 @@ void prepare_cpu_args()
     cpu_kernel_args.pal = pal;
     cpu_kernel_args.c_x = c_x;
     cpu_kernel_args.c_y = c_y;
+    cpu_kernel_args.post_process = postprocess;
 
     for (c = 0; c < 3; c++)
     {
@@ -168,56 +168,60 @@ void start_cpu()
     unsigned long tp1, tp2;
     int t;
 
-    cpu_kernel_args.ofs_x++;
-    if (cpu_kernel_args.ofs_x == 4)
-    {
-        cpu_kernel_args.ofs_y++;
-        cpu_kernel_args.ofs_x = 0;
-    }
-    if (cpu_kernel_args.ofs_y == 4)
-    {
-        cpu_kernel_args.ofs_x = 0;
-        cpu_kernel_args.ofs_y = 0;
-    }
-
     tp1 = get_time_usec();
 
-    if (fractal == DRAGON)
+    int frame;
+    for (frame = 0; frame < draw_frames; frame++)
     {
-        memset(cpu_pixels, 0, IMAGE_SIZE);
-        prepare_cpu_args();
-        dragon(0, 0, cpu_pixels, colors, cpu_kernel_args);
-    }
-    else
-    {
-        struct cpu_args t_args[16] = {{0, gws_x / 4, 0, gws_y / 4},
-                                      {gws_x / 4, gws_x / 2, 0, gws_y / 4},
-                                      {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4},
-                                      {gws_x * 3 / 4, gws_x, 0, gws_y / 4},
-
-                                      {0, gws_x / 4, gws_y / 4, gws_y / 2},
-                                      {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2},
-                                      {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2},
-
-                                      {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4},
-                                      {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4},
-                                      {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4},
-
-                                      {0, gws_x / 4, gws_y * 3 / 4, gws_y},
-                                      {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y},
-                                      {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y},
-                                      {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y}};
-
-        pthread_t tid[16];
-        for (t = 0; t < 16; t++)
+        cpu_kernel_args.ofs_x++;
+        if (cpu_kernel_args.ofs_x == 4)
         {
-            pthread_create(&tid[t], NULL, execute_fractal_cpu, &t_args[t]);
+            cpu_kernel_args.ofs_y++;
+            cpu_kernel_args.ofs_x = 0;
         }
-        for (t = 0; t < 16; t++)
+        if (cpu_kernel_args.ofs_y == 4)
         {
-            pthread_join(tid[t], NULL);
+            cpu_kernel_args.ofs_x = 0;
+            cpu_kernel_args.ofs_y = 0;
+        }
+
+        if (fractal == DRAGON)
+        {
+            memset(cpu_pixels, 0, IMAGE_SIZE);
+            prepare_cpu_args();
+            dragon(0, 0, cpu_pixels, colors, cpu_kernel_args);
+        }
+        else
+        {
+            struct cpu_args t_args[16] = {{0, gws_x / 4, 0, gws_y / 4},
+                                          {gws_x / 4, gws_x / 2, 0, gws_y / 4},
+                                          {gws_x / 2, gws_x * 3 / 4, 0, gws_y / 4},
+                                          {gws_x * 3 / 4, gws_x, 0, gws_y / 4},
+
+                                          {0, gws_x / 4, gws_y / 4, gws_y / 2},
+                                          {gws_x / 4, gws_x / 2, gws_y / 4, gws_y / 2},
+                                          {gws_x / 2, gws_x * 3 / 4, gws_y / 4, gws_y / 2},
+                                          {gws_x * 3 / 4, gws_x, gws_y / 4, gws_y / 2},
+
+                                          {0, gws_x / 4, gws_y / 2, gws_y * 3 / 4},
+                                          {gws_x / 4, gws_x / 2, gws_y / 2, gws_y * 3 / 4},
+                                          {gws_x / 2, gws_x * 3 / 4, gws_y / 2, gws_y * 3 / 4},
+                                          {gws_x * 3 / 4, gws_x, gws_y / 2, gws_y * 3 / 4},
+
+                                          {0, gws_x / 4, gws_y * 3 / 4, gws_y},
+                                          {gws_x / 4, gws_x / 2, gws_y * 3 / 4, gws_y},
+                                          {gws_x / 2, gws_x * 3 / 4, gws_y * 3 / 4, gws_y},
+                                          {gws_x * 3 / 4, gws_x, gws_y * 3 / 4, gws_y}};
+
+            pthread_t tid[16];
+            for (t = 0; t < 16; t++)
+            {
+                pthread_create(&tid[t], NULL, execute_fractal_cpu, &t_args[t]);
+            }
+            for (t = 0; t < 16; t++)
+            {
+                pthread_join(tid[t], NULL);
+            }
         }
     }
     tp2 = get_time_usec();
@@ -250,7 +254,7 @@ void draw_right_panel(int column)
 {
     int row = 0;
     unsigned long exec_time;
-    unsigned long avg, r_avg1, r_avg2;
+    unsigned long avg, r_avg;
 
     draw_box(WIDTH, 0, RIGTH_PANEL_WIDTH, HEIGHT, 0, 0, 60);
 
@@ -263,6 +267,9 @@ void draw_right_panel(int column)
     draw_double(row++, "rx", rx);
     draw_double(row++, "ty", ty);
     draw_double(row++, "by", by);
+
+    // printf("dx=%-2.20f\n", fabs(rx-lx));
+    // printf("dy=%-2.20f\n", fabs(ty-by));
 
     draw_string(row++, "==", " Parameters ===");
     draw_int(row++, "i/I iter", max_iter);
@@ -300,17 +307,13 @@ void draw_right_panel(int column)
     draw_double(row++, "w/s dy", dy);
 
     draw_string(row++, "SPACE", " Benchmarking [us]");
-    draw_long(row++, "frame", frames_time / draw_frames);
     avg = calculate_avg_time(&exec_time);
 
     draw_2long(row++, "exec", exec_time, "avg", avg);
     last_avg_result = avg;
 
-    r_avg1 = flips ? prepare_times / flips : 0;
-    draw_2long(row++, "prepare", prepare_time, "avg", r_avg1);
-
-    r_avg2 = flips ? render_times / flips : 0;
-    draw_2long(row++, "render", render_time, "avg", r_avg2);
+    r_avg = flips ? render_times / flips : 0;
+    draw_2long(row++, "render", render_time, "avg", r_avg);
 
     if (performance_test)
     {
@@ -321,18 +324,18 @@ void draw_right_panel(int column)
         dst.x = column;
         dst.y = 0;
 
-        if (r_avg1 + r_avg2)
+        if (avg + r_avg)
         {
-            res = (HEIGHT_FL - 40) * (frames_time / draw_frames) / (r_avg1 + r_avg2);
+            res = (HEIGHT_FL - 60) * avg / (avg + r_avg);
         }
         dst.h = res;
 
         SDL_SetRenderDrawColor(main_window, 255, 128, 128, 255);
         SDL_RenderFillRect(main_window, &dst);
 
-        if (r_avg1 + r_avg2)
+        if (avg + r_avg)
         {
-            res = (HEIGHT_FL - 40) * avg / (r_avg1 + r_avg2);
+            res = (HEIGHT_FL - 60) * r_avg / (avg + r_avg);
         }
         dst.h = res;
         if (dst.x + 5 < WIDTH) dst.x += 5;
@@ -397,28 +400,19 @@ void show_iterations_window()
 
 void prepare_frames()
 {
-    unsigned long tp1, tp2;
-    int pixel;
-    frames_time = 0;
-    for (pixel = 0; pixel < draw_frames; pixel++)
-    {
-        tp1 = get_time_usec();
 #ifdef OPENCL_SUPPORT
-        if (cur_dev)
-        {
-            start_ocl();
-            gpu_executions += ocl_devices[current_device].execution;
-            gpu_iter++;
-        }
-        else
+    if (cur_dev)
+    {
+        start_ocl();
+        gpu_executions += ocl_devices[current_device].execution;
+        gpu_iter++;
+    }
+    else
 #endif
-        {
-            start_cpu();
-            cpu_executions += cpu_execution;
-            cpu_iter++;
-        }
-        tp2 = get_time_usec();
-        frames_time += tp2 - tp1;
+    {
+        start_cpu();
+        cpu_executions += cpu_execution;
+        cpu_iter++;
     }
 }
 
@@ -473,7 +467,7 @@ void outside()
 void draw_fractals()
 {
     float m2x, m2y;
-    unsigned long tp1, tp2, tp3;
+    unsigned long tp1, tp2;
     SDL_Rect window_rec;
 
     window_rec.w = WIDTH;
@@ -483,9 +477,12 @@ void draw_fractals()
 
     flip_window = 0;
 
-    tp1 = get_time_usec();
     prepare_frames();
-    tp2 = get_time_usec();
+    tp1 = get_time_usec();
+
+    int pitch;
+    SDL_LockTexture(texture, NULL, &texture_pixels, &pitch);
+    if (pitch * HEIGHT != IMAGE_SIZE) printf("wrong pitch=%d -> %d\n", pitch, IMAGE_SIZE / HEIGHT);
 
 #ifdef OPENCL_SUPPORT
     if (cur_dev)
@@ -495,14 +492,16 @@ void draw_fractals()
     else
 #endif
     {
-        void* pixels;
-        int pitch;
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
-        memcpy(pixels, cpu_pixels, pitch * HEIGHT);
-        if (pitch * HEIGHT != IMAGE_SIZE) printf("cpu size=%d -> %d\n", pitch * HEIGHT, IMAGE_SIZE);
-        if (postprocess) make_postprocess(pixels);
-        SDL_UnlockTexture(texture);
+        if (postprocess)
+        {
+            make_postprocess(cpu_pixels);
+        }
+        else
+        {
+            memcpy(texture_pixels, cpu_pixels, IMAGE_SIZE);
+        }
     }
+    SDL_UnlockTexture(texture);
     SDL_RenderCopy(main_window, texture, NULL, &window_rec);
 
     m2x = equation(m1x, 0.0f, lx, WIDTH_FL, rx);
@@ -516,8 +515,8 @@ void draw_fractals()
     }
 
     prepare_cpu_args();
-    sprintf(status_line, "[%2.20f,%2.20f] %s: %s iter=%d mod1=%d", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal],
-            calculate_one_pixel(m1x / 4, m1y / 4), mod1);
+    sprintf(status_line, "[%2.20f,%2.20f] %s: %s iter=%d mod1=%d post=%d", m2x, m2y, cur_dev ? "OCL" : "CPU", fractals_names[fractal],
+            calculate_one_pixel(m1x / 4, m1y / 4), mod1, postprocess);
     write_text(status_line, 0, HEIGHT - FONT_SIZE);
 #ifdef OPENCL_SUPPORT
     if (cur_dev)
@@ -533,16 +532,12 @@ void draw_fractals()
     }
 
     SDL_RenderPresent(main_window);
-    tp3 = get_time_usec();
+    tp2 = get_time_usec();
 
-    prepare_time = tp2 - tp1;
-    prepare_times += prepare_time;
-
-    render_time = tp3 - tp2;
+    render_time = tp2 - tp1;
     render_times += render_time;
     flips++;
-    // printf("prepare time=%lu\n", tp2 - tp1);
-    // printf("render time=%lu\n", tp3 - tp2);
+    // printf("render time=%lu\n", tp2 - tp1);
 }
 
 int keyboard_event(SDL_Event* event)

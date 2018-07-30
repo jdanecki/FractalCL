@@ -117,7 +117,6 @@ void prepare_kernel_args64(struct kernel_args64* args)
     args->c_x = c_x;
     args->c_y = c_y;
     args->ofs_x++;
-    // printf("x=%d\n", args->ofs_x);
     if (args->ofs_x == 4)
     {
         args->ofs_y++;
@@ -128,6 +127,7 @@ void prepare_kernel_args64(struct kernel_args64* args)
         args->ofs_x = 0;
         args->ofs_y = 0;
     }
+    args->post_process = postprocess;
 }
 #endif
 void prepare_kernel_args32(struct kernel_args32* args)
@@ -180,8 +180,10 @@ void prepare_kernel_args32(struct kernel_args32* args)
         args->ofs_x = 0;
         args->ofs_y = 0;
     }
+    args->post_process = postprocess;
 }
 
+extern int draw_frames;
 int execute_fractal(struct ocl_device* dev, enum fractals fractal)
 {
     size_t gws[2];
@@ -197,39 +199,43 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     if (set_kernel_arg(kernel, name, 0, sizeof(cl_mem), &dev->cl_pixels)) return 1;
     if (set_kernel_arg(kernel, name, 1, sizeof(cl_mem), &dev->cl_colors)) return 1;
 
-#ifdef FP_64_SUPPORT
-    if (dev->fp64)
-    {
-        struct kernel_args64* args64 = &dev->args64[fractal];
-        prepare_kernel_args64(args64);
-        if (set_kernel_arg(kernel, name, 2, sizeof(*args64), args64)) return 1;
-    }
-    else
-#endif
-    {
-        struct kernel_args32* args32 = &dev->args32[fractal];
-        prepare_kernel_args32(args32);
-        if (set_kernel_arg(kernel, name, 2, sizeof(*args32), args32)) return 1;
-    }
-
-    // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
-    // NULL, &dev->event);
-    //
-    //    printf("%s: clEnqueueNDRangeKernel %s\n", dev->name, name);
-
     tp1 = get_time_usec();
-
-    err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL, NULL);
-    if (err != CL_SUCCESS)
+    int frame;
+    for (frame = 0; frame < draw_frames; frame++)
     {
-        printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name, err);
-        return 1;
+#ifdef FP_64_SUPPORT
+        if (dev->fp64)
+        {
+            struct kernel_args64* args64 = &dev->args64[fractal];
+            prepare_kernel_args64(args64);
+            if (set_kernel_arg(kernel, name, 2, sizeof(*args64), args64)) return 1;
+        }
+        else
+#endif
+        {
+            struct kernel_args32* args32 = &dev->args32[fractal];
+            prepare_kernel_args32(args32);
+            if (set_kernel_arg(kernel, name, 2, sizeof(*args32), args32)) return 1;
+        }
+
+        // err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0,
+        // NULL, &dev->event);
+        //
+        //    printf("%s: clEnqueueNDRangeKernel %s\n", dev->name, name);
+
+        err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL, NULL);
+        if (err != CL_SUCCESS)
+        {
+            printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name, err);
+            return 1;
+        }
+        clFlush(dev->queue);
     }
-    // clFlush(dev->queue);
     // clWaitForEvents(1, &dev->event);
     clFinish(dev->queue);
     tp2 = get_time_usec();
     dev->execution = tp2 - tp1;
+    //	printf("exec time = %ld\n", tp2-tp1);
 
     //  clReleaseEvent(dev->event);
 
@@ -338,28 +344,14 @@ void update_gpu_texture(int postprocess)
         }
         else
         {
-            void* pixels;
-            int pitch, i;
-            SDL_LockTexture(texture, NULL, &pixels, &pitch);
             if (postprocess)
             {
-                unsigned int* src = px1;
-                unsigned int* dst = pixels;
-                int s = IMAGE_SIZE / 4;
-                // make_postprocess(pixels);
-                for (i = 0; i < s; i++)
-                {
-                    unsigned int c = src[i] * mm;
-                    dst[i] = colors[c % 360 + 360 * (c < max_iter)];
-                }
+                make_postprocess(px1);
             }
             else
             {
-                memcpy(pixels, px1, pitch * HEIGHT);
-                if (pitch * HEIGHT != IMAGE_SIZE) printf("gpu size=%d -> %d\n", pitch * HEIGHT, IMAGE_SIZE);
+                memcpy(texture_pixels, px1, IMAGE_SIZE);
             }
-
-            SDL_UnlockTexture(texture);
 
             if (fractal == DRAGON) memset(px1, 0, IMAGE_SIZE);
             clEnqueueUnmapMemObject(ocl_devices[current_device].queue, ocl_devices[current_device].cl_pixels, px1, 0, NULL, NULL);

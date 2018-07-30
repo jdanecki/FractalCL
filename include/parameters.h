@@ -59,6 +59,7 @@ extern float c2[3];
 extern float c3[3];
 extern float c4[3];
 extern int mod1;
+extern int postprocess;
 
 int calculate_offsets();
 void select_fractal(int f);

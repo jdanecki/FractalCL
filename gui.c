@@ -25,6 +25,7 @@ TTF_Font* font;
 
 SDL_Renderer* main_window;
 SDL_Texture* texture;
+void* texture_pixels;
 
 void init_font()
 {
@@ -114,7 +115,7 @@ void clear_window() { draw_box(0, 0, WIDTH, HEIGHT, 0, 0, 0); }
 void draw_double(int y, char* txt, double val)
 {
     char buf[256];
-    sprintf(buf, "%s=%2.15f  ", txt, val);
+    sprintf(buf, "%s=%2.20f  ", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 

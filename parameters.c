@@ -27,6 +27,7 @@ FP_TYPE mx, my;               // mouse coordinates between [ofs_lx..ofs_rx, ofs_
 
 unsigned int rgb;
 unsigned int mm = 1;
+int postprocess;
 
 int gws_x = WIDTH / 4;
 int gws_y = HEIGHT / 4;
@@ -66,10 +67,7 @@ unsigned long long iter_limit = 43000000000000LL;
 
 unsigned long render_time;
 unsigned long render_times;
-unsigned long prepare_time;
-unsigned long prepare_times;
 unsigned long flips;
-unsigned long frames_time;
 unsigned long cpu_execution;
 unsigned long cpu_executions, gpu_executions;
 unsigned long cpu_iter, gpu_iter;
@@ -112,7 +110,6 @@ void clear_counters()
     gpu_iter = 0;
     gpu_executions = 0;
     render_times = 0;
-    prepare_times = 0;
     flips = 0;
 }
 
