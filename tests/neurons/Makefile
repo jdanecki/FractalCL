@@ -18,7 +18,7 @@ SDL_ACCELERATED=1
 SDL2_LIB=$(shell pkg-config --libs sdl2 SDL2_ttf SDL2_gfx)
 SDL2_CFLAGS=$(shell pkg-config --cflags sdl2 SDL2_ttf SDL2_gfx)
 
-CFLAGS=-g -Wall -Wno-deprecated-declarations -I../../include
+CFLAGS=-g -Wall -Wno-deprecated-declarations -I../../include -DDATA_PATH=`pwd`/../..
 
 ifeq ($(SDL_ACCELERATED), 1)
 CFLAGS+=-DSDL_ACCELERATED=1
