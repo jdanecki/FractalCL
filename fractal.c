@@ -287,17 +287,21 @@ void draw_right_panel(int column)
 
     draw_string(row++, "P ", " Colors ==");
     draw_int(row++, "p pal", pal);
-
     draw_hex(row++, "c/C channel", color_channel);
-    draw_hex(row++, "+/= rgb +-1", rgb);
-    draw_hex(row++, "_/- rgb +-16", rgb);
-    draw_hex(row++, "m/M mm +-1", mm);
 
-    draw_double(row++, "h/H c1", c1[color_channel]);
-    draw_double(row++, "j/J c2", c2[color_channel]);
-    draw_double(row++, "k/K c3", c3[color_channel]);
-    draw_double(row++, "l/L c4", c4[color_channel]);
-
+    if (pal < 2)
+    {
+        draw_hex(row++, "+/= rgb +-1", rgb);
+        draw_hex(row++, "_/- rgb +-16", rgb);
+        draw_hex(row++, "m/M mm +-1", mm);
+    }
+    else
+    {
+        draw_double(row++, "h/H c1", c1[color_channel]);
+        draw_double(row++, "j/J c2", c2[color_channel]);
+        draw_double(row++, "k/K c3", c3[color_channel]);
+        draw_double(row++, "l/L c4", c4[color_channel]);
+    }
     draw_string(row++, "===", " Moves ====");
     draw_double(row++, "Left/Right szx", szx);
     draw_double(row++, "Down/Up szy", szy);
