@@ -30,7 +30,7 @@ ifeq ($(SDL_ACCELERATED), 1)
 CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
-all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons
+all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons test_iter
 
 test_ocl: ../ocl.c test_ocl.c Makefile
 	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
@@ -49,6 +49,9 @@ test_fractal: ../gui.c ../timer.c test_fractal.c Makefile
 
 test_complex: test_complex.c Makefile
 	gcc -o $@ $@.c $(CFLAGS)
+
+test_iter: test_iter.c Makefile
+	gcc -o $@ $@.c $(CFLAGS) -lm
 
 test_neurons:
 	make -C neurons
