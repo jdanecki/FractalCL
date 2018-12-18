@@ -16,7 +16,7 @@
 */
 
 #include "gui.h"
-
+#include <time.h>
 //#define F1
 
 unsigned int* pixels;

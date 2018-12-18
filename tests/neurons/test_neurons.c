@@ -20,6 +20,7 @@
 //#define USE_SIGMOID
 
 #include "gui.h"
+#include <time.h>
 
 unsigned int* pixels;
 float a0, b0;                         // expected

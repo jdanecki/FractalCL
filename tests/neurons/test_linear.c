@@ -18,6 +18,7 @@
 // learning tests with linear function
 
 #include "gui.h"
+#include <time.h>
 
 unsigned int* pixels;
 float a1, b1, a2, b2;
