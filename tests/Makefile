@@ -30,7 +30,8 @@ ifeq ($(SDL_ACCELERATED), 1)
 CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
-all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons test_iter
+all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons test_iter \
+	search_fractal test_mpfr test_fractal_mpfr test_fractal_gmp test_gtk
 
 test_ocl: ../ocl.c test_ocl.c Makefile
 	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
@@ -46,6 +47,21 @@ test_sdl_render: ../gui.c ../timer.c test_sdl_render.c Makefile
 
 test_fractal: ../gui.c ../timer.c test_fractal.c Makefile
 	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+
+search_fractal: ../gui.c ../timer.c search_fractal.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+
+test_fractal_mpfr: ../gui.c ../timer.c test_fractal_mpfr.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -lmpfr -DDATA_PATH=`pwd`/.. -mfpmath=sse -march=native -msse2 -mtune=native
+
+test_mpfr: test_mpfr.c Makefile
+	gcc -o $@ $@.c -g -Wall -lmpfr -mfpmath=sse -march=native -msse2 -mtune=native
+
+test_fractal_gmp: ../gui.c ../timer.c test_fractal_gmp.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -lgmp -DDATA_PATH=`pwd`/.. -mfpmath=sse -march=native -msse2 -mtune=native
+
+test_gtk:  test_gtk.c ../timer.c
+	gcc test_gtk.c -g -o test_gtk `pkg-config gtk+-3.0 --cflags --libs` -lm -I../include ../timer.c
 
 test_complex: test_complex.c Makefile
 	gcc -o $@ $@.c $(CFLAGS)
