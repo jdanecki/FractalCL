@@ -3,7 +3,7 @@ language: c
 compiler: gcc
 sudo: required
 install:
-    - sudo apt-get update -y; sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev ocl-icd-opencl-dev libsdl2-gfx-dev
+    - sudo apt-get update -y; sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev ocl-icd-opencl-dev libsdl2-gfx-dev libgmp-dev libmpfr-dev libgtk-3-dev
 
 matrix:
     include:
