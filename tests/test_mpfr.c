@@ -15,9 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include <gmp.h>
 #include <mpfr.h>
-#include <stdio.h>
 
 int res = 200;
 
