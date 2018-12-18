@@ -16,6 +16,7 @@
 */
 
 #include "gui.h"
+#include "timer.h"
 
 #define ITERATIONS 3000
 

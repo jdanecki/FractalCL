@@ -35,17 +35,17 @@ all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma tes
 test_ocl: ../ocl.c test_ocl.c Makefile
 	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
 
-test_sdl: ../gui.c test_sdl.c Makefile
-	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_sdl: ../gui.c ../timer.c test_sdl.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
 test_plasma: ../gui.c test_plasma.c Makefile
 	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
-test_sdl_render: ../gui.c test_sdl_render.c Makefile
-	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_sdl_render: ../gui.c ../timer.c test_sdl_render.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
-test_fractal: ../gui.c test_fractal.c Makefile
-	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+test_fractal: ../gui.c ../timer.c test_fractal.c Makefile
+	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
 test_complex: test_complex.c Makefile
 	gcc -o $@ $@.c $(CFLAGS)

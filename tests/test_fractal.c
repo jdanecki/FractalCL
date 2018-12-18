@@ -16,6 +16,7 @@
 */
 
 #include "gui.h"
+#include "timer.h"
 #include <pthread.h>
 
 double lx = -1.0f;
@@ -266,18 +267,20 @@ int main()
                 {
                     sprintf(status_line, "max[%d]:%d/%d ", t, args[t].max_iter, max_iter);
                     write_text(status_line, WIDTH, ry);
+                    printf(status_line);
                     ry += FONT_SIZE;
 
                     sprintf(status_line, "%1.20f ", args[t].max_iter_x);
                     write_text(status_line, WIDTH, ry);
+                    printf(status_line);
                     ry += FONT_SIZE;
 
                     sprintf(status_line, "%1.20f ", args[t].max_iter_y);
                     write_text(status_line, WIDTH, ry);
+                    printf("%s\n", status_line);
                     ry += FONT_SIZE;
                 }
             }
-
             avg = i ? render_times / i : 0;
 
             sprintf(status_line, "exec=%lu ", exec_time);

@@ -53,6 +53,7 @@ add_executable(FractalCL
     gui.c
     parameters.c
     palette.c
+    timer.c
     include/fractal_complex.h
     include/fractal.h
     include/gui.h

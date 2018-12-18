@@ -34,6 +34,7 @@
 
 #include "palette.h"
 #include "parameters.h"
+#include "timer.h"
 
 void* cpu_pixels;
 int quiet;

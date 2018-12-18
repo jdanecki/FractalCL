@@ -16,6 +16,7 @@
 */
 
 #include "gui.h"
+#include <time.h>
 
 unsigned int* pixels;
 float ofs = 0.01f;

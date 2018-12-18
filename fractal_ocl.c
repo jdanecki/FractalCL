@@ -19,6 +19,7 @@
 #include "gui.h"
 #include "palette.h"
 #include "parameters.h"
+#include "timer.h"
 
 int finish_thread;
 pthread_cond_t cond_fin;

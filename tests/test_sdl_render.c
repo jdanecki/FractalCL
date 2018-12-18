@@ -16,6 +16,7 @@
 */
 
 #include "gui.h"
+#include "timer.h"
 
 #include <SDL2_framerate.h>
 #include <SDL2_gfxPrimitives.h>

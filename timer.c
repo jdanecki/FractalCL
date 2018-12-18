@@ -15,25 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <unistd.h>
+#include "timer.h"
 
-#include "common.h"
-#include "window.h"
+unsigned long get_time_usec()
+{
+    struct timespec t;
 
-extern SDL_Renderer* main_window;
-extern SDL_Texture* texture;
-extern void* texture_pixels;
-
-int init_window();
-void write_text(const char* t, int x, int y);
-void draw_box(int x, int y, int w, int h, int r, int g, int b);
-void clear_window();
-
-void draw_double(int y, char* txt, double val);
-void draw_int(int y, char* txt, int val);
-void draw_string(int y, char* txt, char* val);
-void draw_hex(int y, char* txt, int val);
-void draw_long(int y, char* txt, unsigned long val);
-void draw_2long(int y, char* txt1, unsigned long val1, char* txt2, unsigned long val2);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+    return (t.tv_sec * 1000000 + t.tv_nsec / 1000);
+}

@@ -198,9 +198,8 @@ int create_kernels(struct ocl_device* dev, char* options)
     sources[i + 1] = common_functions.source;
     filesizes[i + 1] = common_functions.filesize;
 
-    sprintf(cl_options,
-            "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
-            "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
+    sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
+                        "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
             options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "", STRING_MACRO(DATA_PATH));
     dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 2, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)

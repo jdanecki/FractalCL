@@ -51,17 +51,11 @@ void get_ab(float x1, float y1, float x2, float y2, float* a, float* b)
     *b = y1 - *a * x1;
 }
 
-float f1(float i)
-{ // expected values
-    return a1 * i + b1;
-}
+float expected(float i) { return a1 * i + b1; }
 
-float f2(float i)
-{ // learning function
-    return a2 * i + b2;
-}
+float learnt(float i) { return a2 * i + b2; }
 
-float err(float i) { return (f1(i) - f2(i)); }
+float err(float i) { return (expected(i) - learnt(i)); }
 
 void new_values(float* a, float* b)
 {
@@ -111,11 +105,11 @@ int main()
 
         for (float p = -1.0; p < 1.0;)
         {
-            draw(p, f1(p), 0x00ff00);
-            draw(p, f2(p), 0xffffff);
-            draw(p, err(p), 0xff0000);
+            draw(p, expected(p), 0x00ff00); // green
+            draw(p, learnt(p), 0xffffff);   // white
+            draw(p, err(p), 0xff0000);      // red
 
-            draw(p, 0, 0xff);
+            draw(p, 0, 0xff); // blue
             draw(0, p, 0xff);
 
             p += 0.001;
@@ -172,10 +166,10 @@ int main()
         sprintf(status_line, "mx=%f my=%f ", mx, my);
         write_text(status_line, WIDTH, 0);
 
-        sprintf(status_line, "f1=%f ", f1(mx));
+        sprintf(status_line, "expected=%f ", expected(mx));
         write_text(status_line, WIDTH, 20);
 
-        sprintf(status_line, "f2=%f ", f2(mx));
+        sprintf(status_line, "learnt=%f ", learnt(mx));
         write_text(status_line, WIDTH, 40);
 
         sprintf(status_line, "e=%f ", err(mx));
