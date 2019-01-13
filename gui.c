@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  Jacek Danecki <jacek.m.danecki@gmail.com>
+    Copyright (C) 2018-2019 Jacek Danecki <jacek.m.danecki@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ void clear_window() { draw_box(0, 0, WIDTH, HEIGHT, 0, 0, 0); }
 void draw_double(int y, char* txt, double val)
 {
     char buf[256];
-    sprintf(buf, "%s=%2.20f  ", txt, val);
+    sprintf(buf, "%s=%2.10e  ", txt, val);
     write_text(buf, WIDTH, FONT_SIZE * y + 2);
 }
 

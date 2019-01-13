@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  Jacek Danecki <jacek.m.danecki@gmail.com>
+    Copyright (C) 2018-2019 Jacek Danecki <jacek.m.danecki@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -304,8 +304,8 @@ void draw_right_panel(int column)
         draw_double(row++, "l/L c4", c4[color_channel]);
     }
     draw_string(row++, "===", " Moves ====");
-    draw_double(row++, "Left/Right szx", szx);
-    draw_double(row++, "Down/Up szy", szy);
+    draw_double(row++, "L/R szx", szx);
+    draw_double(row++, "D/U szy", szy);
     draw_double(row++, "*// szx", szx);
     draw_double(row++, "*// szy", szy);
     draw_double(row++, "a/d dx", dx);
