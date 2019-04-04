@@ -3,16 +3,46 @@ starting performance test with 32000 iterations for device: 0
 name:           Intel(R) Gen9 HD Graphics NEO
 vendor:         Intel(R) Corporation
 device version: OpenCL 2.1 NEO 
-driver version: 18.25.10965
+driver version: 19.12.12612
 ocl C version:  OpenCL C 2.0 
 type:           GPU
-extensions:     cl_khr_3d_image_writes cl_khr_byte_addressable_store cl_khr_fp16 cl_khr_depth_images cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics
-cl_khr_icd cl_khr_image2d_from_buffer cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_intel_subgroups cl_intel_required_subgroup_size
-cl_intel_subgroups_short cl_khr_spir cl_intel_accelerator cl_intel_media_block_io cl_intel_driver_diagnostics cl_intel_device_side_avc_motion_estimation cl_khr_priority_hints
-cl_khr_throttle_hints cl_khr_create_command_queue cl_khr_fp64 cl_khr_subgroups cl_khr_il_program cl_khr_mipmap_image cl_khr_mipmap_image_writes cl_intel_planar_yuv
-cl_intel_packed_yuv cl_intel_motion_estimation cl_intel_advanced_motion_estimation 
+extensions:     cl_khr_3d_image_writes cl_khr_byte_addressable_store cl_khr_fp16 cl_khr_depth_images cl_khr_global_int32_base_atomics
+cl_khr_global_int32_extended_atomics cl_khr_icd cl_khr_image2d_from_buffer cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics
+cl_intel_subgroups cl_intel_required_subgroup_size cl_intel_subgroups_short cl_khr_spir cl_intel_accelerator cl_intel_media_block_io
+cl_intel_driver_diagnostics cl_intel_device_side_avc_motion_estimation cl_khr_priority_hints cl_khr_throttle_hints cl_khr_create_command_queue
+cl_khr_fp64 cl_khr_subgroups cl_khr_il_program cl_intel_spirv_device_side_avc_motion_estimation cl_intel_spirv_media_block_io cl_intel_spirv_subgroups
+cl_khr_mipmap_image cl_khr_mipmap_image_writes cl_intel_planar_yuv cl_intel_packed_yuv cl_intel_motion_estimation cl_intel_advanced_motion_estimation 
+Kernel: 4.16.12-x86_64
+--- CPU info ---
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                12
+On-line CPU(s) list:   0-11
+Thread(s) per core:    2
+Core(s) per socket:    6
+Socket(s):             1
+Vendor ID:             GenuineIntel
+CPU family:            6
+Model:                 158
+Model name:            Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz
+Stepping:              10
+CPU MHz:               4498.475
+CPU max MHz:           4700.0000
+CPU min MHz:           800.0000
+BogoMIPS:              7392.00
+Virtualization:        VT-x
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              256K
+L3 cache:              12288K
+Flags:                 fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx
+pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor
+ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm
+3dnowprefetch cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm mpx
+rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp
 --- performance results --- 
-avg exec time: 183 [us]
+avg exec time: 170 [us]
 ***********************************************************
 starting performance test with 32000 iterations for device: 1
 ***********************************************************
@@ -23,8 +53,36 @@ driver version: 1.4
 ocl C version:  OpenCL C 2.0 beignet 1.4 (git-7e181af2)
 type:           GPU
 extensions:     cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics
-cl_khr_byte_addressable_store cl_khr_3d_image_writes cl_khr_image2d_from_buffer cl_khr_depth_images cl_khr_spir cl_khr_icd cl_intel_accelerator cl_intel_subgroups
-cl_intel_subgroups_short cl_intel_media_block_io cl_intel_planar_yuv cl_khr_fp16
+cl_khr_byte_addressable_store cl_khr_3d_image_writes cl_khr_image2d_from_buffer cl_khr_depth_images cl_khr_spir cl_khr_icd cl_intel_accelerator
+cl_intel_subgroups cl_intel_subgroups_short cl_intel_media_block_io cl_intel_planar_yuv cl_khr_fp16
+Kernel: 4.16.12-x86_64
+--- CPU info ---
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                12
+On-line CPU(s) list:   0-11
+Thread(s) per core:    2
+Core(s) per socket:    6
+Socket(s):             1
+Vendor ID:             GenuineIntel
+CPU family:            6
+Model:                 158
+Model name:            Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz
+Stepping:              10
+CPU MHz:               4211.026
+CPU max MHz:           4700.0000
+CPU min MHz:           800.0000
+BogoMIPS:              7392.00
+Virtualization:        VT-x
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              256K
+L3 cache:              12288K
+Flags:                 fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx
+pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor
+ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm
+3dnowprefetch cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm mpx
+rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp
 --- performance results --- 
-avg exec time: 248 [us]
-***********************************************************
+avg exec time: 217 [us]

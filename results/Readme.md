@@ -11,9 +11,9 @@ with FP_64_SUPPORT=OFF because not all OpenCL implementations provide working su
 | Nvidia |           | GTX 1050Ti  | 390.67          | OCL GPU CUDA| 43     |
 | Nvidia |           | Quadro M1200| 384.111         | OCL GPU CUDA| 106    |
 | Intel  | i7-8700K  |             | 1.2.0.37        | OCL CPU     | 145    |
-| Intel  | i7-8700K  | CFL GT2     | Neo 18.25.10965 | OCL GPU     | 183    |
+| Intel  | i7-8700K  | CFL GT2     | Neo 19.12.12612 | OCL GPU     | 170    |
+| Intel  | i7-8700K  | CFL GT2     | Beignet 1.4     | OCL GPU     | 217    |
 | Intel  | i7-7820HQ | KBL GT2     | Neo 18.25.10965 | OCL GPU     | 227    |
-| Intel  | i7-8700K  | CFL GT2     | Beignet 1.4     | OCL GPU     | 248    |
 | Intel  | i5-6260U  | SKL GT3     | Neo 1.0         | OCL GPU     | 251    |
 | Intel  | i5-6260U  | SKL GT3     | Beignet 1.2     | OCL GPU     | 265    |
 | Nvidia |           | GTX 770     | 390.48          | OCL GPU CUDA| 270    |
