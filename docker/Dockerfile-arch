@@ -1,4 +1,4 @@
-FROM docker.io/base/archlinux
+FROM docker.io/archlinux/base
 MAINTAINER Jacek Danecki <jacek.m.danecki@gmail.com>
 
 COPY FractalCL /root/FractalCL
