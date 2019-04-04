@@ -190,13 +190,15 @@ int create_kernels(struct ocl_device* dev, char* options)
     {
         sources[i] = fractals[i].source;
         filesizes[i] = fractals[i].filesize;
-        if (!quiet) printf("preparing kernel%d]: %s\n", i, fractals[i].name);
+        if (!quiet) printf("preparing kernel%d: %s\n", i, fractals[i].name);
     }
     sources[i] = test_fractal.source;
     filesizes[i] = test_fractal.filesize;
+    if (!quiet) printf("preparing kernel: %s\n", test_fractal.name);
 
     sources[i + 1] = common_functions.source;
     filesizes[i + 1] = common_functions.filesize;
+    if (!quiet) printf("preparing kernel: %s\n", common_functions.name);
 
     sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
                         "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
