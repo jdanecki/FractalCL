@@ -235,8 +235,7 @@ int execute_fractal(struct ocl_device* dev, enum fractals fractal)
     // clWaitForEvents(1, &dev->event);
     clFinish(dev->queue);
     tp2 = get_time_usec();
-    dev->execution = tp2 - tp1;
-    //	printf("exec time = %ld\n", tp2-tp1);
+    dev->execution = (tp2 - tp1) / draw_frames;
 
     //  clReleaseEvent(dev->event);
 
