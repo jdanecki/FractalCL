@@ -22,5 +22,6 @@ with FP_64_SUPPORT=OFF because not all OpenCL implementations provide working su
 | Intel  | i5-4200M  | HSW GT2     | Beignet 1.4     | OCL GPU     | 353    |
 | Intel  | i7-6770HQ | SKL GT4     | Neo 18.25.10965 | OCL GPU     | 499    |
 | Intel  | i5-4200M  |             | 1.2.0.37        | OCL CPU     | 646    |
+| Intel  | i7-7820HQ |             | pocl 1.1.4      | OCL CPU     | 724    |
 | Intel  | i7-6770HQ | SKL GT4     | Beignet 1.1.1   | OCL GPU     | 1382   |
 | Intel  | i5-4200M  | HSW GT2     | SRB5 r5.0.63503 | OCL GPU     | 3058   |
