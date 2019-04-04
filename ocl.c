@@ -328,7 +328,7 @@ int init_ocl()
     open_fractal(&test_fractal, "test_kernel");
     open_fractal(&common_functions, "common");
 
-    for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w");
+    for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w -cl-mad-enable ");
 
 deallocate_return:
     free(platforms_ids);

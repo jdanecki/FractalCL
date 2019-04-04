@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  Jacek Danecki <jacek.m.danecki@gmail.com>
+    Copyright (C) 2018-2019 Jacek Danecki <jacek.m.danecki@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,41 +17,47 @@
 
 #include <fractal_ocl.h>
 #include <unistd.h>
+#include "timer.h"
 
 int finish_thread;
 volatile int tasks_finished;
 int quiet;
 
-int execute_fractal(struct ocl_device* dev)
+unsigned long execute_fractal(struct ocl_device* dev)
 {
     char* name = test_fractal.name;
     cl_kernel kernel = dev->test_kernel;
     size_t gws[2];
     size_t ofs[2] = {0, 0};
     int err;
+    unsigned long exec_time;
+    unsigned long tp1, tp2;
 
     gws[0] = 1;
     gws[1] = 1;
 
     printf("execute fractal [%s] on %s\n", name, dev->name);
+    tp1 = get_time_usec();
     err = clEnqueueNDRangeKernel(dev->queue, kernel, 2, ofs, gws, NULL, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         printf("%s: clEnqueueNDRangeKernel %s returned %d\n", dev->name, name, err);
-        return 1;
+        return 0;
     }
     clFinish(dev->queue);
+    tp2 = get_time_usec();
+    exec_time = tp2 - tp1;
 
-    return 0;
+    return exec_time;
 }
 
 void* ocl_kernel(void* d)
 {
     struct ocl_device* dev = (struct ocl_device*)d;
     struct ocl_thread* t = &dev->thread;
-    int err = 0;
+    unsigned long exec_time = 0;
 
-    while (!finish_thread && !err)
+    while (!finish_thread)
     {
         pthread_mutex_lock(&t->lock);
         while (!t->work)
@@ -68,16 +74,20 @@ void* ocl_kernel(void* d)
 
         printf("ocl kernel for %s tid=%lx\n", dev->name, dev->thread.tid);
 
-        err = execute_fractal(dev);
+        exec_time = execute_fractal(dev);
+        tasks_finished++;
 
-        if (err)
+        if (!exec_time)
         {
             printf("thread interrupted\n");
             dev->thread.finished = 1;
             nr_devices--;
+            break;
         }
-
-        tasks_finished++;
+        else
+        {
+            printf("thread tid=%lx time=%lu\n", dev->thread.tid, exec_time);
+        }
     }
     printf("thread done for %s\n", dev->name);
     sleep(1);

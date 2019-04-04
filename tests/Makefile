@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Jacek Danecki <jacek.m.danecki@gmail.com>
+# Copyright (C) 2018-2019  Jacek Danecki <jacek.m.danecki@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,10 +31,10 @@ CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
 all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons test_iter \
-	search_fractal test_mpfr test_fractal_mpfr test_fractal_gmp test_gtk
+	search_fractal test_mpfr test_fractal_mpfr test_fractal_gmp test_gtk test_inter
 
-test_ocl: ../ocl.c test_ocl.c Makefile
-	gcc -o $@ test_ocl.c ../ocl.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
+test_ocl: ../ocl.c ../timer.c test_ocl.c Makefile
+	gcc -o $@ test_ocl.c ../ocl.c ../timer.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
 
 test_sdl: ../gui.c ../timer.c test_sdl.c Makefile
 	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
@@ -64,6 +64,9 @@ test_gtk:  test_gtk.c ../timer.c
 	gcc test_gtk.c -g -o test_gtk `pkg-config gtk+-3.0 --cflags --libs` -lm -I../include ../timer.c
 
 test_complex: test_complex.c Makefile
+	gcc -o $@ $@.c $(CFLAGS)
+
+test_inter: test_inter.c Makefile
 	gcc -o $@ $@.c $(CFLAGS)
 
 test_iter: test_iter.c Makefile
