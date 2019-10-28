@@ -31,13 +31,16 @@ CFLAGS+=-DSDL_ACCELERATED=1
 endif
 
 all: test_ocl test_sdl test_complex test_sdl_render test_fractal test_plasma test_neurons test_iter \
-	search_fractal test_mpfr test_fractal_mpfr test_fractal_gmp test_gtk test_inter
+	search_fractal test_mpfr test_fractal_mpfr test_fractal_gmp test_gtk test_inter test_perf
 
 test_ocl: ../ocl.c ../timer.c test_ocl.c Makefile
 	gcc -o $@ test_ocl.c ../ocl.c ../timer.c $(CFLAGS) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`
 
 test_sdl: ../gui.c ../timer.c test_sdl.c Makefile
 	gcc -o $@ $@.c ../gui.c ../timer.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
+
+test_perf: ../gui.c ../timer.c test_perf.c Makefile ../ocl.c
+	gcc -o $@ $@.c ../gui.c ../timer.c ../ocl.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) $(OPENCL_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..
 
 test_plasma: ../gui.c test_plasma.c Makefile
 	gcc -o $@ $@.c ../gui.c $(CFLAGS) $(SDL2_CFLAGS) $(SDL2_LIB) -lm -lrt -lpthread -ldl -DDATA_PATH=`pwd`/..

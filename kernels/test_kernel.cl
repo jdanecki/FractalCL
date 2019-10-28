@@ -2,7 +2,7 @@ extern int test_function(void);
 
 __kernel void test_kernel()
 {
-    printf("!!! test_kernel function=%d!!!\n", test_function());
+    int f = test_function();
 
 #ifdef cl_khr_fp64
     double v1 = 1.0000000000000002;
@@ -26,8 +26,7 @@ __kernel void test_kernel()
         z_x = j_x;
         z_y = j_y;
     }
-    printf("cl_khr_fp64 defined: v1=%1.16f sum=%1.16f x=%1.16f y=%1.16f iter=%d\n", v1, v1 + v1, z_x, z_y, i);
-
+//    printf("cl_khr_fp64 defined: v1=%1.16f sum=%1.16f x=%1.16f y=%1.16f iter=%d test_function=%d\n", v1, v1 + v1, z_x, z_y, i, f);
 #else
     float v1 = 1.0000001192;
     printf("cl_khr_fp64 not defined: v1=%1.10f sum=%1.10f\n", v1, v1 + v1);

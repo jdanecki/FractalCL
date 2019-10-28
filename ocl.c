@@ -23,7 +23,7 @@ volatile int nr_devices;
 struct ocl_device* ocl_devices;
 int current_device;
 struct ocl_fractal fractals[NR_FRACTALS];
-struct ocl_fractal test_fractal, common_functions;
+struct ocl_fractal test_fractal, common_functions, perf_kernel;
 extern int quiet;
 
 int create_ocl_device(int di, char* plat_name, cl_platform_id id)
@@ -178,13 +178,15 @@ int create_kernels(struct ocl_device* dev, char* options)
     int err, i;
     size_t size;
     char* log;
+#define ALL_OPENCL_KERNELS (NR_FRACTALS + 3)
+    // 1 more for test_kernel, 1 for common.cl, 1 for perf_kernel
 
-    char* sources[NR_FRACTALS + 2]; // 1 more for test_kernel, 1 for common.cl
+    char* sources[ALL_OPENCL_KERNELS];
     char cl_options[1024];
-    size_t filesizes[NR_FRACTALS + 2];
+    size_t filesizes[ALL_OPENCL_KERNELS];
     if (!dev->initialized) return 0;
 
-    if (!quiet) printf("prepare kernels for %s\n", dev->name);
+    if (!quiet) printf("preparing kernels for %s\n", dev->name);
 
     for (i = 0; i < NR_FRACTALS; i++)
     {
@@ -200,10 +202,15 @@ int create_kernels(struct ocl_device* dev, char* options)
     filesizes[i + 1] = common_functions.filesize;
     if (!quiet) printf("preparing kernel: %s\n", common_functions.name);
 
-    sprintf(cl_options, "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
-                        "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
+    sources[i + 2] = perf_kernel.source;
+    filesizes[i + 2] = perf_kernel.filesize;
+    if (!quiet) printf("preparing kernel: %s\n", perf_kernel.name);
+
+    sprintf(cl_options,
+            "%s -D HEIGHT_FL=%f -D HEIGHT=%d -D WIDTH_FL=%f -D "
+            "WIDTH=%d -D BPP=%d -D PITCH=%d %s -I%s/kernels",
             options ? options : "", HEIGHT_FL, HEIGHT, WIDTH_FL, WIDTH, BPP, PITCH, dev->fp64 ? "-DFP_64_SUPPORT=1" : "", STRING_MACRO(DATA_PATH));
-    dev->program = clCreateProgramWithSource(dev->ctx, NR_FRACTALS + 2, (const char**)sources, filesizes, &err);
+    dev->program = clCreateProgramWithSource(dev->ctx, ALL_OPENCL_KERNELS, (const char**)sources, filesizes, &err);
     if (err != CL_SUCCESS)
     {
         printf("%s: clCreateProgramWithSource returned %d\n", dev->name, err);
@@ -242,6 +249,7 @@ int create_kernels(struct ocl_device* dev, char* options)
     if (create_kernel(dev, &fractals[TRICORN], &dev->kernels[TRICORN])) return 1;
 
     if (create_kernel(dev, &test_fractal, &dev->test_kernel)) return 1;
+    if (create_kernel(dev, &perf_kernel, &dev->perf_kernel)) return 1;
 
     if (!quiet) printf("------------------------------------------\n");
     return 0;
@@ -330,6 +338,8 @@ int init_ocl()
     open_fractal(&test_fractal, "test_kernel");
     open_fractal(&common_functions, "common");
 
+    open_fractal(&perf_kernel, "perf_kernel");
+
     for (i = 0; i < nr_devices; i++) err |= create_kernels(&ocl_devices[i], "-w -cl-mad-enable ");
 
 deallocate_return:
@@ -342,6 +352,7 @@ void close_device(struct ocl_device* dev)
     int err, i;
     if (!dev->initialized) return;
 
+    printf("[%lx]: close signal\n", dev->thread.tid);
     pthread_cond_signal(&dev->thread.cond);
 
     while (pthread_cond_destroy(&dev->thread.cond))
@@ -356,6 +367,8 @@ void close_device(struct ocl_device* dev)
     clReleaseProgram(dev->program);
 
     for (i = 0; i < NR_FRACTALS; i++) clReleaseKernel(dev->kernels[i]);
+    clReleaseKernel(dev->test_kernel);
+    clReleaseKernel(dev->perf_kernel);
 
     clReleaseMemObject(dev->cl_pixels);
     clReleaseMemObject(dev->cl_colors);
@@ -385,6 +398,7 @@ int close_ocl()
     }
     close_fractal(&test_fractal);
     close_fractal(&common_functions);
+    close_fractal(&perf_kernel);
     return 0;
 }
 

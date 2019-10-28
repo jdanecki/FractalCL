@@ -29,6 +29,7 @@ struct ocl_fractal
 
 extern struct ocl_fractal fractals[NR_FRACTALS];
 extern struct ocl_fractal test_fractal;
+extern struct ocl_fractal perf_kernel;
 
 struct ocl_thread
 {
@@ -50,6 +51,7 @@ struct ocl_device
     cl_program program;
     cl_kernel kernels[NR_FRACTALS];
     cl_kernel test_kernel;
+    cl_kernel perf_kernel;
 #ifdef FP_64_SUPPORT
     struct kernel_args64 args64[NR_FRACTALS];
 #endif
