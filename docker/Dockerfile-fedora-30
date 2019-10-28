@@ -3,6 +3,6 @@ MAINTAINER Jacek Danecki <jacek.m.danecki@gmail.com>
 
 COPY FractalCL /root/FractalCL
 
-RUN dnf install -y gcc make cmake git pkg-config SDL2-devel SDL2_ttf-devel SDL2_gfx-devel ocl-icd-devel which gcc-c++ gmp-devel mpfr-devel gtk3-devel; rpm -e beignet pocl mesa-libOpenCL
+RUN dnf install -y gcc make cmake git pkg-config SDL2-devel SDL2_ttf-devel SDL2_gfx-devel ocl-icd-devel which gcc-c++ gmp-devel mpfr-devel gtk3-devel; rpm -e pocl mesa-libOpenCL
 RUN cd /root/FractalCL; ./configure && make && make install && FractalCL -c -i 1000 && cd tests && make
 CMD ["/bin/bash"]
