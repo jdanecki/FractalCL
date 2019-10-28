@@ -24,6 +24,8 @@ Discover and explore fractals world with OpenCL acceleration.
 * OpenCL CPU - OpenCL Runtime for Intel Core and Intel Xeon Processors: https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime
 * Nvidia OpenCL 1.2 CUDA - The NVIDIA Accelerated Graphics Driver Set for Linux-x86_64: http://www.nvidia.com
 * Portable Computing Language: http://pocl.sourceforge.net
+* AMD GPU - AMDGPU All-Open and AMDGPU-Pro Driver: https://www.amd.com
+* ROCm OpenCL - Radeon Open Compute: https://github.com/RadeonOpenCompute
 
 # Mouse usage
 
@@ -79,7 +81,7 @@ Some screenshots with fractals are presented [here](fractals.md)
 # Build configuration (configure script)
 
 * FP_64_SUPPORT - Use fp64 extension [ON/OFF] (default ON)
-* SDL_ACCELERATED - "Use SDL with GPU acceleration [ON/OFF] (default OFF)
+* SDL_ACCELERATED - Use SDL with GPU acceleration [ON/OFF] (default OFF)
 * OPENCL_SUPPORT - Use OpenCL acceleration [ON/OFF] (default ON)
 * PREFIX - directory where program will be installed
 
@@ -111,11 +113,16 @@ where n:
       6 - generalized celtic
 ```
 
-# Tests (directory tests)
+# Tests 
 
-* test_ocl - verify OpenCL support
-* test_complex - simple tests with complex numbers
-* test_sdl - SDL2 benchmarking test
+[Directory tests](https://github.com/jdanecki/FractalCL/tree/master/tests) contains simple tests for:
+
+* OpenCL
+* SDL
+* complex math
+* fractals
+* gmp and mpfr libraries
+* gtk
 
 # Older versions
 
