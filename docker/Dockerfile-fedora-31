@@ -1,4 +1,4 @@
-FROM fedora:29
+FROM fedora:31
 MAINTAINER Jacek Danecki <jacek.m.danecki@gmail.com>
 
 COPY FractalCL /root/FractalCL
