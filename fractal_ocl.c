@@ -36,7 +36,7 @@ int prepare_pixels(struct ocl_device* dev)
     void* pixels;
 
     if (posix_memalign((void**)&pixels, 4096, IMAGE_SIZE)) return 1;
-    dev->cl_pixels = clCreateBuffer(dev->ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, IMAGE_SIZE, pixels, &err);
+    dev->cl_pixels = clCreateBuffer(dev->ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, IMAGE_SIZE, pixels, &err);
 
     if (err != CL_SUCCESS)
     {
